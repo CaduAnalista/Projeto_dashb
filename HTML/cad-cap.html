@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Analista | Captação e Cadastro</title>
+
+    <link rel="stylesheet" href="../CSS/cad-cap.css">
+
+    <!-- Biblioteca para leitura de planilhas Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <header class="topo">
+        <div class="marca">
+            <span class="marca-icone">A</span>
+            <div>
+                <h1>ANALISTA</h1>
+                <p>Inteligência e Gestão de Dados</p>
+            </div>
+        </div>
+
+        <div class="usuario">
+            <span class="status-indicador"></span>
+            <span>Captação / Cadastro</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="cabecalho-pagina">
+            <div>
+                <p class="sobretitulo">PAINEL GERENCIAL</p>
+                <h2>Captação e Cadastro</h2>
+                <p class="descricao">
+                    Acompanhe os leads, os contatos comerciais e a conversão de prospects.
+                </p>
+            </div>
+
+            <div class="acoes">
+                <label for="arquivoExcel" class="botao-principal">
+                    Importar planilha Excel
+                </label>
+                <input
+                    type="file"
+                    id="arquivoExcel"
+                    accept=".xlsx,.xls,.csv"
+                    hidden
+                >
+            </div>
+        </section>
+
+        <section class="painel-filtros">
+            <div>
+                <label for="filtroOrgao">Órgão</label>
+                <select id="filtroOrgao">
+                    <option value="">Todos os órgãos</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="filtroColaborador">Colaborador</label>
+                <select id="filtroColaborador">
+                    <option value="">Todos os colaboradores</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="filtroPlano">Plano ASSEFAZ</label>
+                <select id="filtroPlano">
+                    <option value="">Todos</option>
+                    <option value="sim">Possui plano</option>
+                    <option value="nao">Não possui plano</option>
+                </select>
+            </div>
+
+            <button type="button" id="limparFiltros" class="botao-secundario">
+                Limpar filtros
+            </button>
+        </section>
+
+        <section class="secao">
+            <div class="titulo-secao">
+                <div>
+                    <h3>Indicadores principais</h3>
+                    <p>Visão geral dos leads e do processo de captação.</p>
+                </div>
+
+                <span id="statusDados" class="status-dados">
+                    Aguardando planilha
+                </span>
+            </div>
+
+            <div class="grade-indicadores">
+                <article class="cartao-indicador destaque">
+                    <span class="indicador-legenda">Total de leads</span>
+                    <strong id="totalLeads">—</strong>
+                    <span class="indicador-rodape">Base de prospects</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">Sem plano ASSEFAZ</span>
+                    <strong id="totalSemPlano">—</strong>
+                    <span class="indicador-rodape">Oportunidades de captação</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">1º contato</span>
+                    <strong id="totalContato1">—</strong>
+                    <span class="indicador-rodape">Primeira abordagem</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">2º contato</span>
+                    <strong id="totalContato2">—</strong>
+                    <span class="indicador-rodape">Segunda abordagem</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">3º contato</span>
+                    <strong id="totalContato3">—</strong>
+                    <span class="indicador-rodape">Terceira abordagem</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">Prospects interessados</span>
+                    <strong id="totalInteressados">—</strong>
+                    <span class="indicador-rodape">Interesse identificado</span>
+                </article>
+
+                <article class="cartao-indicador">
+                    <span class="indicador-legenda">Aceitaram preencher a adesão</span>
+                    <strong id="totalAdesao">—</strong>
+                    <span class="indicador-rodape">Avanço na conversão</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="secao">
+            <div class="titulo-secao">
+                <div>
+                    <h3>Temperatura dos prospects</h3>
+                    <p>Distribuição conforme a classificação comercial.</p>
+                </div>
+            </div>
+
+            <div class="grade-temperatura">
+                <article class="cartao-temperatura frio">
+                    <div class="temperatura-topo">
+                        <span class="ponto"></span>
+                        <span>Frios</span>
+                    </div>
+                    <strong id="totalFrios">—</strong>
+                    <p>Baixa propensão de conversão</p>
+                </article>
+
+                <article class="cartao-temperatura morno">
+                    <div class="temperatura-topo">
+                        <span class="ponto"></span>
+                        <span>Mornos</span>
+                    </div>
+                    <strong id="totalMornos">—</strong>
+                    <p>Potencial em desenvolvimento</p>
+                </article>
+
+                <article class="cartao-temperatura quente">
+                    <div class="temperatura-topo">
+                        <span class="ponto"></span>
+                        <span>Quentes</span>
+                    </div>
+                    <strong id="totalQuentes">—</strong>
+                    <p>Maior potencial de conversão</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="secao">
+            <div class="titulo-secao">
+                <div>
+                    <h3>Captação por órgão</h3>
+                    <p>Quantidade de prospects vinculados a cada órgão.</p>
+                </div>
+            </div>
+
+            <div class="cartao-tabela">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Órgão</th>
+                            <th>Total de prospects</th>
+                            <th>Sem plano ASSEFAZ</th>
+                            <th>Interessados</th>
+                            <th>Aceitaram adesão</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaOrgaos">
+                        <tr>
+                            <td colspan="5" class="mensagem-vazia">
+                                Importe uma planilha para visualizar os indicadores.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="secao">
+            <div class="titulo-secao">
+                <div>
+                    <h3>Captação por colaborador</h3>
+                    <p>Produção individual da equipe comercial.</p>
+                </div>
+            </div>
+
+            <div class="cartao-tabela">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Colaborador</th>
+                            <th>Total captado</th>
+                            <th>Interessados</th>
+                            <th>Aceitaram adesão</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaColaboradores">
+                        <tr>
+                            <td colspan="4" class="mensagem-vazia">
+                                Os dados aparecerão após a importação da planilha.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="secao">
+            <div class="titulo-secao">
+                <div>
+                    <h3>Base de leads</h3>
+                    <p>Prévia dos registros considerados nos indicadores.</p>
+                </div>
+            </div>
+
+            <div class="cartao-tabela tabela-base">
+                <table>
+                    <thead id="cabecalhoLeads">
+                        <tr>
+                            <th>Importação pendente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaLeads">
+                        <tr>
+                            <td class="mensagem-vazia">
+                                Selecione o arquivo Excel para carregar os registros.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="rodape">
+            <span>ANALISTA · Inteligência de Dados</span>
+            <span id="ultimaAtualizacao">Nenhuma planilha carregada</span>
+        </footer>
+    </main>
+
+    <script src="../JAVA/cad-cap.js"></script>
+</body>
+</html>
