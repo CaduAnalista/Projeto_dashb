@@ -3,588 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A0E1A">
     <meta name="robots" content="noindex, nofollow">
-
-    <title>Inteligência de Rede</title>
+    <title>Inteligência de Rede | NEXUS</title>
 
     <!-- Transição de chegada pelo portal do login -->
     <script src="../JAVA/portal-chegada.js"></script>
 
+    <link rel="icon" type="image/png" href="../ASSETS/nexus-icone-64.png">
     <link rel="stylesheet" href="../CSS/inteligencia.css">
 
-    <!-- Biblioteca para gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Biblioteca para leitura de Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- Leitura e exportação de Excel (SheetJS 0.20.3, dentro do projeto: funciona offline) -->
+    <script src="../LIB/xlsx-0.20.3.full.min.js" defer></script>
 </head>
-
 <body>
+<div class="app sem-transicao" id="app">
 
-<div class="dashboard-container dashboard-shell">
-
-    <aside class="ir-sidebar" id="irSidebar" aria-label="Navegação do painel">
-        <div class="sidebar-brand">
-            <div class="sidebar-mark">IR</div>
-            <div class="sidebar-brand-text">
-                <strong>INTELIGÊNCIA</strong>
-                <span>DE REDE · NEXUS</span>
-            </div>
+    <!-- =====================================================
+         MENU LATERAL
+    ====================================================== -->
+    <aside class="menu" id="menu" aria-label="Menu principal">
+        <div class="menu-topo">
+            <a class="marca" href="./inteligencia.html" aria-label="NEXUS, Inteligência de Dados">
+                <img src="../ASSETS/nexus-icone-64.png" alt="" width="40" height="40" class="marca-icone">
+                <span class="marca-texto">
+                    <strong>NEXUS</strong>
+                    <small>Inteligência de Dados</small>
+                </span>
+            </a>
+            <button class="menu-recolher" id="menuRecolher" type="button" aria-label="Recolher menu" aria-expanded="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
         </div>
 
-        <div class="sidebar-caption">NAVEGAÇÃO</div>
-        <nav class="sidebar-nav">
-            <a class="sidebar-link" href="#area-cabecalho" data-section="area-cabecalho">
-                <span class="nav-icon">⌂</span><span class="nav-label">Cabeçalho e base</span>
-            </a>
-            <a class="sidebar-link" href="#visao-geral" data-section="visao-geral">
-                <span class="nav-icon">▦</span><span class="nav-label">Visão geral</span>
-            </a>
-            <a class="sidebar-link" href="#analise-operacional" data-section="analise-operacional">
-                <span class="nav-icon">◫</span><span class="nav-label">Análise operacional</span>
-            </a>
-            <a class="sidebar-link" href="#reclamacoes" data-section="reclamacoes">
-                <span class="nav-icon">▤</span><span class="nav-label">Reclamações</span>
-            </a>
-            <a class="sidebar-link" href="#acompanhamento" data-section="acompanhamento">
-                <span class="nav-icon">◷</span><span class="nav-label">Acompanhamento / SLA</span>
-            </a>
-            <a class="sidebar-link sidebar-sub-link" href="#registros" data-section="registros">
-                <span class="nav-icon">↳</span><span class="nav-label">Registros e tratativas</span>
-            </a>
-            <a class="sidebar-link" href="#area-filtros" data-section="area-filtros">
-                <span class="nav-icon">☷</span><span class="nav-label">Filtros</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-bottom">
-            <span class="sidebar-live-dot"></span>
-            <span>Painel analítico</span>
+        <div class="menu-painel">
+            <span class="menu-rotulo">Painel</span>
+            <strong class="menu-painel-nome">Inteligência de Rede</strong>
         </div>
-        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher menu" title="Recolher menu">‹</button>
+
+        <!-- Seletor suspenso: pula direto para a tela desejada -->
+        <label class="menu-seletor">
+            <span class="menu-rotulo">Ir para a tela</span>
+            <select id="seletorTela" aria-label="Ir para a tela"></select>
+        </label>
+
+        <nav class="menu-nav" id="menuNav" aria-label="Telas do painel"></nav>
+
+        <div class="menu-rodape">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <span>Os dados ficam só neste navegador.</span>
+        </div>
     </aside>
-    <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Abrir menu">☰</button>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <main class="dashboard-main">
 
+    <div class="menu-fundo" id="menuFundo" hidden></div>
 
-    <!-- CABEÇALHO -->
-    <header class="dashboard-header">
-        <div class="header-brand">
-            <div class="brand-icon">IR</div>
+    <!-- =====================================================
+         CONTEÚDO
+    ====================================================== -->
+    <main class="conteudo" id="conteudo">
 
-            <div>
-                <h1>Inteligência de Rede</h1>
-                <p>Dashboard</p>
-            </div>
-        </div>
-
-        <div class="header-actions">
-            <span class="status-indicator">
-                <span class="status-dot"></span>
-                Painel analítico
-            </span>
-
-            <button class="btn-secondary" id="btnAtualizar">
-                Atualizar painel
+        <header class="topo">
+            <button class="botao-icone topo-menu" id="abrirMenu" type="button" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
             </button>
-        </div>
-    </header>
 
-
-    <!-- CABEÇALHO / BASE DE DADOS -->
-    <section class="import-section" id="area-cabecalho">
-        <div class="section-heading">
-            <div>
-                <h2>Base de dados</h2>
-                <p>Importe o Excel para alimentar os indicadores automaticamente.</p>
+            <div class="topo-titulo">
+                <span class="topo-sobretitulo">Inteligência de Rede</span>
+                <h1 id="tituloTela">Visão operacional</h1>
             </div>
 
-            <span class="data-badge" id="statusBase">
-                Aguardando planilha
-            </span>
-        </div>
-
-        <div class="import-box">
-            <div class="import-icon">↥</div>
-
-            <div class="import-text">
-                <h3>Importar arquivo Excel</h3>
-                <p>
-                    Selecione a planilha que contém os chamados do CRM.
-                    Os indicadores serão calculados a partir dos dados importados.
-                </p>
+            <div class="topo-info" id="topoInfo">
+                <!-- Situação da ocorrência (STATUS_OCORRENCIA): filtra a tela inteira -->
+                <div class="situacao">
+                    <span class="filtro-rotulo">Situação</span>
+                    <div class="segmentado" id="filtroSituacao" role="group" aria-label="Situação da ocorrência">
+                        <button type="button" data-situacao="" aria-pressed="true">Todos <small id="qtdTodos">0</small></button>
+                        <button type="button" data-situacao="pendente" aria-pressed="false">Pendentes <small id="qtdPendentes">0</small></button>
+                        <button type="button" data-situacao="encerrado" aria-pressed="false">Encerrados <small id="qtdEncerrados">0</small></button>
+                    </div>
+                </div>
+                <span class="info-chip" title="Data usada nos cartões de hoje">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+                    Hoje: <strong id="infoHoje">—</strong>
+                </span>
             </div>
 
-            <label for="arquivoExcel" class="btn-primary">
-                Selecionar arquivo
+            <label class="botao botao-primario" for="arquivoExcel">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+                <span>Importar planilha</span>
             </label>
+            <input type="file" id="arquivoExcel" accept=".xlsx,.xls,.csv" hidden>
+        </header>
 
-            <input
-                type="file"
-                id="arquivoExcel"
-                accept=".xlsx,.xls,.csv"
-                hidden
-            >
-        </div>
+        <!-- ============ TELA 1: VISÃO OPERACIONAL ============ -->
+        <section class="tela" id="tela-operacional" data-tela="operacional" data-titulo="Visão operacional" data-icone="painel">
 
-        <p id="mensagemImportacao" class="import-message">
-            Nenhuma planilha carregada.
-        </p>
-    </section>
+            <!-- Filtros -->
+            <div class="filtros" id="filtros" aria-label="Filtros">
+                <div class="filtro">
+                    <button class="filtro-botao" id="botaoPeriodo" type="button" aria-haspopup="dialog" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+                        <span class="filtro-rotulo">Abertura</span>
+                        <span class="filtro-valor" id="valorPeriodo">Todo o período</span>
+                        <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="popover" id="popoverPeriodo" hidden>
+                        <div class="periodo-campos">
+                            <label>De <input type="date" id="periodoDe"></label>
+                            <label>Até <input type="date" id="periodoAte"></label>
+                        </div>
+                        <div class="atalhos" id="atalhosPeriodo">
+                            <button type="button" data-atalho="hoje">Hoje</button>
+                            <button type="button" data-atalho="7">7 dias</button>
+                            <button type="button" data-atalho="30">30 dias</button>
+                            <button type="button" data-atalho="mes">Mês atual</button>
+                            <button type="button" data-atalho="tudo">Tudo</button>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="filtro">
+                    <label class="filtro-botao filtro-select">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+                        <span class="filtro-rotulo">Setor</span>
+                        <select id="filtroSetor" aria-label="Setor"><option value="">Todos</option></select>
+                        <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </label>
+                </div>
 
-    <!-- FILTROS -->
-    <section class="filters-section" id="area-filtros">
-        <div class="section-heading">
-            <div>
-                <h2>Filtros de análise</h2>
-                <p>Utilize os filtros para segmentar os resultados.</p>
+                <div class="filtro">
+                    <button class="filtro-botao" id="botaoOcorrencia" type="button" aria-haspopup="listbox" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                        <span class="filtro-rotulo">Ocorrência</span>
+                        <span class="filtro-valor" id="valorOcorrencia">Todas</span>
+                        <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="popover popover-lista" id="popoverOcorrencia" hidden>
+                        <input type="search" id="buscaOcorrencia" placeholder="Buscar ocorrência..." aria-label="Buscar ocorrência">
+                        <div class="lista-opcoes" id="listaOcorrencia" role="listbox" aria-multiselectable="true"></div>
+                        <div class="popover-rodape">
+                            <span id="contaOcorrencia">0 selecionadas</span>
+                            <button type="button" class="link" id="limparOcorrencia">Limpar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canal de comunicação (coluna DESC_COMUNICACAO) -->
+                <div class="filtro filtro-tipos" id="grupoCanal">
+                    <span class="filtro-rotulo" title="Canal de comunicação (DESC_COMUNICACAO)">Canal</span>
+                    <div class="chips" id="chipsCanal" role="group" aria-label="Canal de comunicação"></div>
+                    <div class="filtro-mais">
+                        <button type="button" class="chip chip-mais" id="botaoMaisCanais" aria-haspopup="listbox" aria-expanded="false" aria-pressed="false" hidden>+0</button>
+                        <div class="popover popover-lista popover-direita" id="popoverCanais" hidden>
+                            <span class="filtro-rotulo">Outros canais</span>
+                            <div class="lista-opcoes" id="listaMaisCanais" role="listbox" aria-multiselectable="true"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="botao-icone limpar-filtros" id="limparFiltros" type="button" title="Limpar todos os filtros" aria-label="Limpar todos os filtros">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
             </div>
 
-            <button class="btn-text" id="limparFiltros">
-                Limpar filtros
-            </button>
-        </div>
+            <!-- Faixa de indicadores -->
+            <div class="faixa">
+                <div class="kpis">
+                    <article class="kpi kpi-destaque">
+                        <div class="kpi-icone"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                        <div class="kpi-texto">
+                            <span class="kpi-rotulo">Protocolos pendentes</span>
+                            <span class="kpi-apoio" id="apoioPendentes">em aberto</span>
+                        </div>
+                        <strong class="kpi-valor" id="kpiPendentes">—</strong>
+                    </article>
+                    <article class="kpi">
+                        <div class="kpi-icone"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+                        <div class="kpi-texto">
+                            <span class="kpi-rotulo">Abertos hoje</span>
+                            <span class="kpi-apoio" id="apoioAbertosHoje">—</span>
+                        </div>
+                        <strong class="kpi-valor" id="kpiAbertosHoje">—</strong>
+                    </article>
+                    <article class="kpi">
+                        <div class="kpi-icone"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></div>
+                        <div class="kpi-texto">
+                            <span class="kpi-rotulo">Encerrados hoje</span>
+                            <span class="kpi-apoio" id="apoioEncerradosHoje">—</span>
+                        </div>
+                        <strong class="kpi-valor" id="kpiEncerradosHoje">—</strong>
+                    </article>
+                </div>
 
-        <div class="filters-grid">
-
-            <div class="filter-group">
-                <label for="filtroSetor">Setor responsável</label>
-                <select id="filtroSetor">
-                    <option value="">Todos os setores</option>
-                </select>
+                <article class="cartao setores">
+                    <header class="cartao-topo">
+                        <div>
+                            <h2 id="tituloSetores">Protocolos por setor</h2>
+                            <p class="cartao-apoio">Prazo RN 623 em dias úteis (pendentes até hoje, encerrados até o encerramento) · clique num setor para filtrar</p>
+                        </div>
+                        <ul class="legenda" aria-label="Legenda">
+                            <li><i class="ponto ok"></i>Em dia <small>&lt; 4 dias</small></li>
+                            <li><i class="ponto atencao"></i>Atenção <small>4 a 5</small></li>
+                            <li><i class="ponto atraso"></i>Atraso <small>&gt; 5</small></li>
+                        </ul>
+                    </header>
+                    <div class="setores-lista" id="setoresLista">
+                        <p class="vazio-pequeno">Importe uma planilha para ver os setores.</p>
+                    </div>
+                </article>
             </div>
 
-            <div class="filter-group">
-                <label for="filtroStatus">Status do chamado</label>
-                <select id="filtroStatus">
-                    <option value="">Todos os status</option>
-                    <option value="aberto">Aberto</option>
-                    <option value="encerrado">Encerrado</option>
-                </select>
-            </div>
+            <!-- Tabela de protocolos -->
+            <article class="cartao tabela-cartao">
+                <header class="tabela-topo">
+                    <div class="tabela-titulo">
+                        <h2>Protocolos</h2>
+                        <span class="contador" id="contadorTabela">0</span>
+                        <span class="tabela-fonte" id="chipBase" hidden>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                            <span id="infoBase"></span>
+                        </span>
+                    </div>
+                    <div class="tabela-acoes">
+                        <label class="busca">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                            <input type="search" id="buscaTabela" placeholder="Protocolo, CPF ou e-mail" aria-label="Buscar na tabela">
+                        </label>
+                        <button class="botao botao-secundario" id="exportarExcel" type="button" disabled>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+                            <span>Exportar Excel</span>
+                        </button>
+                    </div>
+                </header>
 
-            <div class="filter-group">
-                <label for="filtroSLA">Situação do prazo</label>
-                <select id="filtroSLA">
-                    <option value="">Todas as situações</option>
-                    <option value="em dia">Em dia</option>
-                    <option value="atenção">Em atenção</option>
-                    <option value="atraso">Em atraso</option>
-                </select>
-            </div>
+                <div class="tabela-area" id="tabelaArea">
+                    <table class="tabela" id="tabela">
+                        <colgroup>
+                            <col class="c-protocolo"><col class="c-cpf"><col class="c-email"><col class="c-setor">
+                            <col class="c-ocorrencia"><col class="c-data"><col class="c-data"><col class="c-status"><col class="c-obs">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th scope="col" data-ordem="protocolo">Protocolo</th>
+                                <th scope="col" data-ordem="cpf">CPF</th>
+                                <th scope="col" data-ordem="email">E-mail</th>
+                                <th scope="col" data-ordem="setor">Setor</th>
+                                <th scope="col" data-ordem="ocorrencia">Ocorrência</th>
+                                <th scope="col" data-ordem="abertura" aria-sort="descending">Abertura</th>
+                                <th scope="col" data-ordem="previsao">Previsão</th>
+                                <th scope="col" data-ordem="prazo">Status</th>
+                                <th scope="col">Observação de abertura</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela"></tbody>
+                    </table>
 
-            <div class="filter-group">
-                <label for="dataInicial">Data de abertura inicial</label>
-                <input type="date" id="dataInicial">
-            </div>
-
-            <div class="filter-group">
-                <label for="dataFinal">Data de abertura final</label>
-                <input type="date" id="dataFinal">
-            </div>
-
-        </div>
-    </section>
-
-
-    <!-- VISÃO GERAL -->
-    <section class="section-block" id="visao-geral">
-        <div class="section-heading">
-            <div>
-                <h2>Visão geral dos chamados</h2>
-                <p>Indicadores operacionais da rede credenciada.</p>
-            </div>
-        </div>
-
-        <div class="kpi-grid">
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Total de chamados</span>
-                    <span class="kpi-icon">▤</span>
+                    <div class="vazio" id="vazio">
+                        <div class="vazio-icone">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+                        </div>
+                        <strong id="vazioTitulo">Nenhuma planilha carregada</strong>
+                        <p id="vazioTexto">Clique em <b>Importar planilha</b> ou arraste o arquivo (.xlsx, .xls ou .csv) para esta janela.</p>
+                    </div>
                 </div>
-                <strong class="kpi-value" id="totalChamados">—</strong>
-                <span class="kpi-description">Volume total da base</span>
+
+                <footer class="paginacao" id="paginacao">
+                    <span id="infoPagina">—</span>
+                    <div class="paginacao-botoes">
+                        <button class="botao-icone" id="paginaAnterior" type="button" aria-label="Página anterior" disabled>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+                        </button>
+                        <span id="numeroPagina">—</span>
+                        <button class="botao-icone" id="proximaPagina" type="button" aria-label="Próxima página" disabled>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        </button>
+                    </div>
+                </footer>
             </article>
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Abertos hoje</span>
-                    <span class="kpi-icon">＋</span>
-                </div>
-                <strong class="kpi-value" id="abertosHoje">—</strong>
-                <span class="kpi-description">Chamados abertos no dia</span>
-            </article>
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Encerrados hoje</span>
-                    <span class="kpi-icon">✓</span>
-                </div>
-                <strong class="kpi-value" id="encerradosHoje">—</strong>
-                <span class="kpi-description">Chamados encerrados no dia</span>
-            </article>
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Em aberto</span>
-                    <span class="kpi-icon">◷</span>
-                </div>
-                <strong class="kpi-value" id="totalAbertos">—</strong>
-                <span class="kpi-description">Chamados ainda não encerrados</span>
-            </article>
-
-            <article class="kpi-card kpi-danger">
-                <div class="kpi-top">
-                    <span class="kpi-label">Atrasados · RN 623</span>
-                    <span class="kpi-icon">!</span>
-                </div>
-                <strong class="kpi-value" id="atrasadosRN623">—</strong>
-                <span class="kpi-description">Conforme regra de prazo definida</span>
-            </article>
-
-            <article class="kpi-card kpi-warning">
-                <div class="kpi-top">
-                    <span class="kpi-label">Atrasados · RN 566</span>
-                    <span class="kpi-icon">◷</span>
-                </div>
-                <strong class="kpi-value" id="atrasadosRN566">—</strong>
-                <span class="kpi-description">Conforme classificação da base</span>
-            </article>
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Tempo médio de encerramento</span>
-                    <span class="kpi-icon">◴</span>
-                </div>
-                <strong class="kpi-value" id="tempoMedioEncerramento">—</strong>
-                <span class="kpi-description">Tempo médio para concluir chamados</span>
-            </article>
-
-            <article class="kpi-card kpi-highlight">
-                <div class="kpi-top">
-                    <span class="kpi-label">IR mensal</span>
-                    <span class="kpi-icon">↗</span>
-                </div>
-                <strong class="kpi-value" id="irMes">—</strong>
-                <span class="kpi-description">Índice de resolução no prazo</span>
-            </article>
-
-        </div>
-    </section>
-
-
-    <!-- ACOMPANHAMENTO DE SLA -->
-    <section class="section-block" id="acompanhamento">
-        <div class="section-heading">
-            <div>
-                <h2>Monitoramento de SLA por setor</h2>
-                <p>
-                    Acompanhamento dos chamados em dia, em atenção e em atraso
-                    pela regra de prazo da RN 623.
-                </p>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="chart-container chart-large">
-                <canvas id="graficoSLASetores"></canvas>
-            </div>
-
-            <div class="table-wrapper">
-                <table id="tabelaSLA">
-                    <thead>
-                        <tr>
-                            <th>Setor</th>
-                            <th>Total</th>
-                            <th>Em dia</th>
-                            <th>Em atenção</th>
-                            <th>Em atraso</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="tabelaSLABody">
-                        <tr>
-                            <td colspan="5" class="empty-state">
-                                Importe uma planilha para visualizar os dados.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ANÁLISE OPERACIONAL -->
-    <section class="section-block" id="analise-operacional">
-        <div class="section-heading">
-            <div>
-                <h2>Evolução dos chamados</h2>
-                <p>Volume, tendência e comportamento operacional ao longo do tempo.</p>
-            </div>
-        </div>
-
-        <div class="charts-grid">
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Total de chamados</h3>
-                    <p>Evolução mensal e média</p>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoEvolucaoChamados"></canvas>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Abertura x encerramento</h3>
-                    <p>Comparativo mensal do fluxo de chamados</p>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoAbertosEncerrados"></canvas>
-                </div>
-                <div class="chart-legend-note">
-                    <span class="legend-dot legend-green"></span> Encerramentos acima das aberturas
-                    <span class="legend-dot legend-yellow"></span> Volumes iguais
-                    <span class="legend-dot legend-red"></span> Encerramentos abaixo das aberturas
-                </div>
-            </article>
-
-        </div>
-    </section>
-
-
-    <!-- DISTRIBUIÇÃO OPERACIONAL -->
-    <section class="section-block" id="distribuicao-operacional">
-        <div class="section-heading">
-            <div>
-                <h2>Distribuição operacional</h2>
-                <p>Identificação dos principais motivos de contato e concentração de demandas.</p>
-            </div>
-        </div>
-
-        <div class="charts-grid">
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Chamados por assunto</h3>
-                    <p>Principais assuntos registrados no CRM</p>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoAssuntos"></canvas>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Chamados por setor</h3>
-                    <p>Distribuição das demandas por área responsável</p>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoSetores"></canvas>
-                </div>
-            </article>
-
-        </div>
-    </section>
-
-
-    <!-- ANÁLISE DE RECLAMAÇÕES -->
-    <section class="section-block" id="reclamacoes">
-        <div class="section-heading">
-            <div>
-                <h2>Inteligência de reclamações</h2>
-                <p>Análise da origem, dos assuntos e da evolução das reclamações.</p>
-            </div>
-        </div>
-
-        <div class="kpi-grid kpi-grid-compact">
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Total de reclamações</span>
-                    <span class="kpi-icon">▤</span>
-                </div>
-                <strong class="kpi-value" id="totalReclamacoes">—</strong>
-                <span class="kpi-description">Conforme identificação na base</span>
-            </article>
-
-            <article class="kpi-card">
-                <div class="kpi-top">
-                    <span class="kpi-label">Média mensal</span>
-                    <span class="kpi-icon">◷</span>
-                </div>
-                <strong class="kpi-value" id="mediaReclamacoes">—</strong>
-                <span class="kpi-description">Média do período disponível</span>
-            </article>
-
-        </div>
-
-        <div class="charts-grid">
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Reclamações por plano</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoReclamacoesPlano"></canvas>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Reclamações por assunto</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoReclamacoesAssunto"></canvas>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Reclamações por setor</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoReclamacoesSetor"></canvas>
-                </div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-heading">
-                    <h3>Evolução mensal das reclamações</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="graficoReclamacoesMensal"></canvas>
-                </div>
-            </article>
-
-        </div>
-    </section>
-
-
-    <!-- CONSULTA E TRATATIVAS -->
-    <section class="section-block" id="registros">
-        <div class="section-heading">
-            <div>
-                <h2>Consulta de chamados</h2>
-                <p>Base detalhada para análise, acompanhamento e exportação.</p>
-            </div>
-
-            <button class="btn-primary" id="exportarChamados">
-                Exportar Excel
-            </button>
-        </div>
-
-        <div class="panel">
-
-            <div class="table-summary">
-                <span id="quantidadeRegistros">
-                    0 registros encontrados
-                </span>
-                <span>Dados conforme filtros selecionados</span>
-            </div>
-
-            <div class="table-wrapper">
-                <table id="tabelaChamados">
-                    <thead>
-                        <tr>
-                            <th>Protocolo</th>
-                            <th>Nome do beneficiário</th>
-                            <th>CPF</th>
-                            <th>E-mail</th>
-                            <th>Setor</th>
-                            <th>Descrição da ocorrência</th>
-                            <th>Data de abertura</th>
-                            <th>Data da previsão</th>
-                            <th>Status RN 566</th>
-                            <th>Status RN 623</th>
-                            <th>Observação da abertura</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="corpoTabelaChamados">
-                        <tr>
-                            <td colspan="11" class="empty-state">
-                                Aguardando importação da planilha.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="table-footer">
-                <span>
-                    Os filtros selecionados serão considerados na consulta e na exportação.
-                </span>
-            </div>
-
-        </div>
-    </section>
-
-
-    <!-- RODAPÉ -->
-    <footer class="dashboard-footer">
-        <div>
-            <strong>NEXUS</strong>
-            <span> · Inteligência de Rede</span>
-        </div>
-
-        <span id="ultimaAtualizacao">
-            Aguardando carregamento dos dados
-        </span>
-    </footer>
-
-</main>
+        </section>
+    </main>
 </div>
 
+<!-- Arraste e solte -->
+<div class="soltar" id="soltar" hidden>
+    <div class="soltar-caixa">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+        <strong>Solte a planilha aqui</strong>
+        <span>.xlsx, .xls ou .csv</span>
+    </div>
+</div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const sidebar = document.getElementById("irSidebar");
-    const toggle = document.getElementById("sidebarToggle");
-    const mobileToggle = document.getElementById("mobileMenuToggle");
-    const overlay = document.getElementById("sidebarOverlay");
-    const links = [...document.querySelectorAll(".sidebar-link")];
-    const targets = links.map(link => document.getElementById(link.dataset.section)).filter(Boolean);
+<!-- Carregando -->
+<div class="carregando" id="carregando" hidden>
+    <div class="carregando-caixa">
+        <span class="giro" aria-hidden="true"></span>
+        <strong>Lendo a planilha...</strong>
+        <span id="carregandoTexto">Isso pode levar alguns segundos.</span>
+    </div>
+</div>
 
-    toggle?.addEventListener("click", () => {
-        document.body.classList.toggle("sidebar-collapsed");
-        toggle.textContent = document.body.classList.contains("sidebar-collapsed") ? "›" : "‹";
-    });
+<!-- Observação completa -->
+<dialog class="detalhe" id="detalhe">
+    <header>
+        <div>
+            <span class="detalhe-rotulo">Protocolo</span>
+            <strong id="detalheProtocolo"></strong>
+        </div>
+        <button class="botao-icone" id="fecharDetalhe" type="button" aria-label="Fechar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+    </header>
+    <dl class="detalhe-dados" id="detalheDados"></dl>
+    <span class="detalhe-rotulo">Observação de abertura</span>
+    <p id="detalheObs"></p>
+</dialog>
 
-    const closeMobile = () => document.body.classList.remove("mobile-sidebar-open");
-    mobileToggle?.addEventListener("click", () => document.body.classList.toggle("mobile-sidebar-open"));
-    overlay?.addEventListener("click", closeMobile);
+<div class="aviso-flutuante" id="avisoFlutuante" role="status" hidden></div>
 
-    links.forEach(link => link.addEventListener("click", event => {
-        const target = document.getElementById(link.dataset.section);
-        if (!target) return;
-        event.preventDefault();
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        links.forEach(item => item.classList.toggle("active", item === link));
-        history.replaceState(null, "", link.getAttribute("href"));
-        closeMobile();
-    }));
-
-    if ("IntersectionObserver" in window) {
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const matching = links.find(link => link.dataset.section === entry.target.id);
-                if (matching) {
-                    links.forEach(item => item.classList.toggle("active", item === matching));
-                }
-            });
-        }, { rootMargin: "-22% 0px -65% 0px", threshold: 0 });
-        targets.forEach(target => observer.observe(target));
-    }
-});
-</script>
-\n<script src="../JAVA/inteligencia.js"></script>
-
+<script src="../JAVA/inteligencia.js" defer></script>
 </body>
 </html>

@@ -107,9 +107,9 @@ function identificarColunas() {
         ]),
 
         plano: encontrarColuna([
-            "Possui plano", "Possui o plano",
-            "Já possui o plano", "Tem plano",
-            "Possui plano de saúde"
+            "Possui plano ASSEFAZ", "Possui plano",
+            "Plano ASSEFAZ", "Já possui o plano",
+            "Possui o plano ASSEFAZ?"
         ]),
 
         contato: encontrarColuna([
