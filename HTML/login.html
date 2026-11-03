@@ -3,107 +3,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101114">
+  <meta name="theme-color" content="#0A0E1A">
   <meta name="robots" content="noindex, nofollow">
-  <title>Optmus | Acesse o Sistema</title>
+  <title>NEXUS | Inteligência de Dados</title>
+  <link rel="icon" type="image/png" href="../ASSETS/nexus-icone-64.png">
   <link rel="stylesheet" href="../CSS/login.css">
 </head>
 <body>
-  <main class="login-scene" id="loginScene">
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <div class="orbit orbit-one"></div>
-    <div class="orbit orbit-two"></div>
+  <!-- Rede de pontos ao fundo (o "nexus" de dados) -->
+  <canvas class="fundo-rede" id="fundoRede" aria-hidden="true"></canvas>
+  <div class="fundo-brilho" aria-hidden="true"></div>
+  <div class="fundo-grade" aria-hidden="true"></div>
 
-    <section class="login-frame" id="loginFrame" aria-label="Acesso ao sistema Optmus">
-      <div class="mascot-side">
-        <div class="mascot-glow"></div>
-        <div class="mascot-stage" id="mascotStage" aria-label="Optmus, assistente robótica">
-          <img
-            src="../ASSETS/optmus-corpo.png"
-            class="mascot-layer mascot-body"
-            id="optmusBody"
-            alt=""
-            aria-hidden="true"
-          >
-          <img
-            src="../ASSETS/optmus-cabeca.png"
-            class="mascot-layer mascot-head"
-            id="optmusHead"
-            alt="Cabeça da Optmus"
-            draggable="false"
-          >
-        </div>
-        <div class="mascot-greeting" id="mascotGreeting" aria-live="polite">
-          <span class="greeting-dot"></span>
-          <span>Olá! Vamos começar?</span>
+  <!-- Filtro do modo alerta: transforma o NEXUS em tons de vermelho (pela luminância) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="filtroAlerta" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.234 0.787 0.079 0 0.08
+                                           0.053 0.179 0.018 0 0
+                                           0.068 0.229 0.023 0 0.02
+                                           0     0     0     1 0"/>
+    </filter>
+  </svg>
+
+  <main class="cena" id="cena">
+
+    <!-- PERSONAGEM -->
+    <section class="lado-nexus" aria-label="NEXUS, assistente de dados">
+      <div class="balao" id="balao" aria-live="polite">
+        <span class="balao-ponto" aria-hidden="true"></span>
+        <span id="balaoTexto">Olá! Eu sou o NEXUS.</span>
+      </div>
+
+      <div class="nexus-janela">
+        <div class="holo-aro aro-1" aria-hidden="true"></div>
+        <div class="holo-aro aro-2" aria-hidden="true"></div>
+
+        <div class="nexus-palco" id="nexusPalco">
+          <div class="nexus-corpo" id="nexusCorpo">
+            <img src="../ASSETS/nexus-corpo.png" alt="" draggable="false">
+            <span class="nexus-nucleo" id="nexusNucleo" aria-hidden="true"></span>
+          </div>
+
+          <div class="nexus-cabeca" id="nexusCabeca">
+            <img src="../ASSETS/nexus-cabeca.png" class="nexus-cabeca-img" alt="NEXUS, andróide de armadura branca com detalhes em ciano" draggable="false">
+
+            <!-- Íris desenhadas sobre os olhos vazios (coordenadas da imagem 1105 × 1424) -->
+            <svg class="nexus-olhos" viewBox="0 0 1105 1424" aria-hidden="true">
+              <defs>
+                <clipPath id="olhoE">
+                  <path d="M495 268.5 L507 268.5 L520 271 L533 277.5 L541 287 L546 298.5 L548.5 315 L548.5 333 L546.5 335 L515 332.5 L490 329 L470 325 L458.5 321 L453 315 L451.5 306.5 L452.5 297 L455 288.5 L460.5 280.5 L470.5 273.5 L482 269.5 Z"/>
+                </clipPath>
+                <clipPath id="olhoD">
+                  <path d="M673 285 L686.5 286 L696 290.5 L703.5 298.5 L706.5 308.5 L706.5 321.5 L704 333 L699.5 340 L685 344 L660 344 L633.5 342.5 L626 341 L623.5 336.5 L623.5 325 L625.5 315.5 L630.5 306 L638.5 297.5 L648.5 290 L660 286 Z"/>
+                </clipPath>
+
+                <radialGradient id="gradIris" cx="0" cy="0" r="31" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.45" stop-color="#7DF6FF"/>
+                  <stop offset="0.62" stop-color="#00E5FF"/>
+                  <stop offset="0.86" stop-color="#0A8FC2"/>
+                  <stop offset="1" stop-color="#05385A"/>
+                </radialGradient>
+                <radialGradient id="gradIrisErro" cx="0" cy="0" r="31" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.45" stop-color="#FFB3C1"/>
+                  <stop offset="0.65" stop-color="#FF4D6D"/>
+                  <stop offset="1" stop-color="#5A0F22"/>
+                </radialGradient>
+                <linearGradient id="gradSombra" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#1A1426" stop-opacity="0.55"/>
+                  <stop offset="0.35" stop-color="#1A1426" stop-opacity="0.12"/>
+                  <stop offset="1" stop-color="#1A1426" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="gradPele" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#CDB2AE"/>
+                  <stop offset="1" stop-color="#EBDCDC"/>
+                </linearGradient>
+                <linearGradient id="gradPeleBaixo" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#E9D8D8"/>
+                  <stop offset="1" stop-color="#DCC6C5"/>
+                </linearGradient>
+
+                <!-- Íris e reflexos reutilizados nos dois olhos -->
+                <g id="modeloIris">
+                  <circle r="31" fill="url(#gradIris)"/>
+                  <circle r="23" fill="none" stroke="#00E5FF" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="2 4"/>
+                  <circle r="30.5" fill="none" stroke="#03243A" stroke-width="2.5"/>
+                </g>
+                <g id="modeloBrilho">
+                  <circle cx="11" cy="-13" r="6.5" fill="#FFFFFF"/>
+                  <circle cx="-10" cy="11" r="2.6" fill="#FFFFFF" opacity="0.8"/>
+                </g>
+              </defs>
+
+              <g clip-path="url(#olhoE)">
+                <g id="irisE" transform="translate(511 306)">
+                  <use href="#modeloIris"/>
+                  <circle id="irisErroE" r="31" fill="url(#gradIrisErro)" opacity="0"/>
+                  <circle id="pupilaE" r="17" fill="#030814"/>
+                </g>
+                <g id="brilhoE" transform="translate(511 306)"><use href="#modeloBrilho"/></g>
+                <rect x="440" y="262" width="120" height="80" fill="url(#gradSombra)"/>
+                <path id="palpInfE" fill="url(#gradPeleBaixo)" d=""/>
+                <path id="palpSupE" fill="url(#gradPele)" d=""/>
+                <path id="cilioE" fill="none" stroke="#0B1020" stroke-width="3.5" stroke-linecap="round" d=""/>
+              </g>
+
+              <g clip-path="url(#olhoD)">
+                <g id="irisD" transform="translate(655 317)">
+                  <use href="#modeloIris"/>
+                  <circle id="irisErroD" r="31" fill="url(#gradIrisErro)" opacity="0"/>
+                  <circle id="pupilaD" r="17" fill="#030814"/>
+                </g>
+                <g id="brilhoD" transform="translate(655 317)"><use href="#modeloBrilho"/></g>
+                <rect x="612" y="278" width="104" height="72" fill="url(#gradSombra)"/>
+                <path id="palpInfD" fill="url(#gradPeleBaixo)" d=""/>
+                <path id="palpSupD" fill="url(#gradPele)" d=""/>
+                <path id="cilioD" fill="none" stroke="#0B1020" stroke-width="3.5" stroke-linecap="round" d=""/>
+              </g>
+            </svg>
+          </div>
         </div>
       </div>
 
-      <div class="form-side">
-        <div class="form-topline">
-          <span class="eyebrow">AMBIENTE DE ACESSO</span>
-          <span class="system-status"><i></i> SISTEMA DISPONÍVEL</span>
-        </div>
-
-        <div class="form-heading">
-          <div class="heading-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          </div>
-          <div>
-            <p class="eyebrow">BEM-VINDO(A)</p>
-            <h1>Acesse o Sistema</h1>
-            <p class="form-subtitle">Informe seus dados para continuar.</p>
-          </div>
-        </div>
-
-        <form id="loginForm" novalidate>
-          <label class="field-label" for="nome">Nome</label>
-          <div class="input-wrap">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
-            <input id="nome" name="nome" type="text" placeholder="Digite seu nome" autocomplete="name" required>
-          </div>
-
-          <label class="field-label" for="dashboard">Dashboard</label>
-          <div class="input-wrap select-wrap">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            <select id="dashboard" name="dashboard" required>
-              <option value="" selected disabled>Selecione seu dashboard</option>
-              <option value="Inteligência de Rede">Inteligência de Rede</option>
-              <option value="Captação/Cadastro">Captação / Cadastro</option>
-            </select>
-            <span class="select-chevron">⌄</span>
-          </div>
-
-          <label class="field-label" for="email">E-mail</label>
-          <div class="input-wrap">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-            <input id="email" name="email" type="email" placeholder="seu.email@assefaz.org.br" autocomplete="email" required>
-          </div>
-
-          <p class="form-feedback" id="formFeedback" role="alert"></p>
-
-          <button class="submit-button" id="submitButton" type="submit">
-            <span>Entrar</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
-          </button>
-        </form>
-
-        <div class="form-footer">
-          <span>ACESSO RESTRITO A USUÁRIOS AUTORIZADOS</span>
-          <span class="footer-line"></span>
-        </div>
-      </div>
+      <div class="nexus-plataforma" aria-hidden="true"></div>
     </section>
 
-    <div class="brand-signature" aria-label="Optmus">
-      <span class="brand-symbol"><i></i></span>
-      <span>OPTMUS</span>
-    </div>
-    <div class="screen-corner corner-left"></div>
-    <div class="screen-corner corner-right"></div>
+    <!-- FORMULÁRIO -->
+    <section class="lado-form" id="painelLogin" aria-labelledby="tituloLogin">
+      <header class="marca">
+        <img src="../ASSETS/nexus-icone-64.png" alt="" class="marca-icone" width="44" height="44">
+        <div>
+          <strong class="marca-nome">NEXUS</strong>
+          <span class="marca-sub">Inteligência de Dados</span>
+        </div>
+        <span class="status-sistema"><i></i> Online</span>
+      </header>
+
+      <div class="titulo">
+        <p class="sobretitulo">Central de indicadores</p>
+        <h1 id="tituloLogin">Acesse seu painel</h1>
+        <p class="subtitulo">Importe uma planilha e veja os indicadores na hora. Os dados ficam só no seu navegador.</p>
+      </div>
+
+      <form id="formLogin" novalidate>
+        <div class="campo">
+          <label for="nome">Nome</label>
+          <div class="campo-caixa">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+            <input id="nome" name="nome" type="text" placeholder="Como você se chama?" autocomplete="name" required>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="painel">Painel</label>
+          <div class="campo-caixa campo-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            <select id="painel" name="painel" required>
+              <option value="" selected disabled>Selecione o painel</option>
+              <option value="Inteligência de Rede">Inteligência de Rede</option>
+              <option value="Relacionamento">Relacionamento</option>
+            </select>
+            <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <div class="campo-caixa">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            <input id="email" name="email" type="email" placeholder="voce@exemplo.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <p class="aviso" id="aviso" role="alert"></p>
+
+        <button class="botao-entrar" id="botaoEntrar" type="submit">
+          <span>Entrar</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </button>
+
+        <button class="botao-demo" id="botaoDemo" type="button">Usar acesso de demonstração</button>
+      </form>
+
+      <footer class="rodape">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span>Nada é enviado ou salvo: a planilha é lida só neste navegador.</span>
+      </footer>
+    </section>
   </main>
 
+  <script src="../JAVA/fundo-rede.js"></script>
+  <script src="../JAVA/nexus.js"></script>
   <script src="../JAVA/login.js"></script>
 </body>
 </html>

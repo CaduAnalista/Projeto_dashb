@@ -1,6 +1,6 @@
 /* ==========================================================
 
-   INTELIGÊNCIA DE REDE — ASSEFAZ
+   INTELIGÊNCIA DE REDE — NEXUS
 
    Importação Excel, indicadores, gráficos, filtros e exportação
 
@@ -595,7 +595,7 @@
 
                 'SOLICITACAO DE MEDICAMENTOS', 'AUTORIZACAO',
 
-                'PROGRAMA DE IMUNIZACAO ASSEFAZ',
+                'PROGRAMA DE IMUNIZACAO',
 
                 'PROGRAMA DE ATENCAO DOMICILIAR - PAD'
 
@@ -607,7 +607,7 @@
 
                 'CONSULTA/ ACOMPANHAMENTO', 'ELEGIBILIDADE',
 
-                'FORMULARIO TISS PELO SITE DA ASSEFAZ',
+                'FORMULARIO TISS PELO SITE',
 
                 'GUIAS - ALTERACAO DE FLUXO/CANCELAMENTO',
 
@@ -779,7 +779,7 @@
 
                 'INSUFICIENCIA DE REDE CREDENCIADA',
 
-                'CANCELAMENTO ASSEFAZ SOCIAL',
+                'CANCELAMENTO DE PLANO SOCIAL',
 
                 'MUDANCA DE CIDADE (UF)'
 

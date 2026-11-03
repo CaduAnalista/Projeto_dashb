@@ -7,6 +7,9 @@
 
     <title>Analista | Captação e Cadastro</title>
 
+    <!-- Transição de chegada pelo portal do login -->
+    <script src="../JAVA/portal-chegada.js"></script>
+
     <link rel="stylesheet" href="../CSS/cad-cap.css">
 
     <!-- Biblioteca para leitura de planilhas Excel -->
@@ -68,7 +71,7 @@
             </div>
 
             <div>
-                <label for="filtroPlano">Plano ASSEFAZ</label>
+                <label for="filtroPlano">Possui plano</label>
                 <select id="filtroPlano">
                     <option value="">Todos</option>
                     <option value="sim">Possui plano</option>
@@ -101,7 +104,7 @@
                 </article>
 
                 <article class="cartao-indicador">
-                    <span class="indicador-legenda">Sem plano ASSEFAZ</span>
+                    <span class="indicador-legenda">Sem plano</span>
                     <strong id="totalSemPlano">—</strong>
                     <span class="indicador-rodape">Oportunidades de captação</span>
                 </article>
@@ -190,7 +193,7 @@
                         <tr>
                             <th>Órgão</th>
                             <th>Total de prospects</th>
-                            <th>Sem plano ASSEFAZ</th>
+                            <th>Sem plano</th>
                             <th>Interessados</th>
                             <th>Aceitaram adesão</th>
                         </tr>
