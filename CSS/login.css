@@ -93,20 +93,34 @@ body {
   height: 55vh;
   z-index: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--nexus-primaria) 22%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--nexus-primaria) 22%, transparent) 1px, transparent 1px);
-  background-size: 64px 64px;
+  overflow: hidden;
   transform: perspective(520px) rotateX(62deg);
   transform-origin: center top;
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 70%, transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 70%, transparent);
   opacity: 0.35;
+}
+
+/* A grade anda com transform (feito pela placa de vídeo, sem repintar a cada quadro).
+   Ela é uma "casa" (64 px) mais alta e anda exatamente uma casa: o laço não aparece. */
+.fundo-grade::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -64px;
+  bottom: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--nexus-primaria) 22%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--nexus-primaria) 22%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
   animation: grade-andar 6s linear infinite;
+  will-change: transform;
 }
 
 @keyframes grade-andar {
-  to { background-position: 0 64px, 0 0; }
+  from { transform: translateY(0); }
+  to { transform: translateY(64px); }
 }
 
 /* =====================================================
@@ -170,11 +184,13 @@ body {
   mask-image: linear-gradient(to bottom, #000 62%, transparent 74%);
 }
 
+/* A imagem do corpo vai só até onde o esmaecimento termina (1064 de 1424 px de altura):
+   o resto nunca aparecia e só pesava no download. */
 .nexus-corpo img {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto 0;
   width: 100%;
-  height: 100%;
+  height: auto;
   pointer-events: none;
 }
 
@@ -613,7 +629,7 @@ button:focus-visible,
   to { transform: scale(0.55) rotate(-4deg); filter: blur(8px) brightness(1.8); opacity: 0; }
 }
 
-.portal-ativo .fundo-grade { animation-duration: 0.6s; }
+.portal-ativo .fundo-grade::before { animation-duration: 0.6s; }
 
 /* Abertura: escala do anel (o JS define --escala-final para cobrir a tela toda) */
 .portal-abertura {
@@ -739,6 +755,16 @@ button:focus-visible,
     margin-top: -8px;
     padding: 24px 20px;
   }
+
+  /* Desfoque de fundo é caro na GPU do celular (ainda mais com o fundo animado atrás).
+     Os painéis já são quase opacos, então sem ele o visual praticamente não muda. */
+  .lado-form,
+  .balao {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .balao { background: color-mix(in srgb, var(--nexus-superficie) 94%, transparent); }
 
   .marca { margin-bottom: 20px; }
 }

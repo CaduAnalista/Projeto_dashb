@@ -105,6 +105,7 @@
     document.body.appendChild(portal);
     document.body.classList.add("portal-ativo");
     if (window.FundoRede) window.FundoRede.dobraEspacial();
+    if (window.SomPortal && !reduzirMovimento) window.SomPortal.tocar();
 
     /* a página de destino continua o clarão e termina a transição */
     try { sessionStorage.setItem("nexus-portal", "1"); } catch (erro) { /* sem armazenamento: só não há chegada animada */ }
@@ -200,6 +201,9 @@
       }
       return;
     }
+
+    /* o áudio precisa ser liberado aqui, ainda dentro do clique/Enter do usuário */
+    if (window.SomPortal && !reduzirMovimento) window.SomPortal.preparar();
 
     botao.disabled = true;
     botao.querySelector("span").textContent = "Acessando...";

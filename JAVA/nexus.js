@@ -84,8 +84,21 @@
   let desvio = { x: 0, y: 0 };
   let elementoAlvo = null;
 
+  /* Posições na tela guardadas em memória: medir a cada quadro obrigaria o navegador
+     a recalcular estilos 60 vezes por segundo (pesa no celular). Remede ao rolar,
+     redimensionar, trocar o alvo e, por garantia, a cada meio segundo. */
+  let retPalco = palco.getBoundingClientRect();
+  let retAlvo = null;
+  let ultimaMedida = 0;
+  function remedir() {
+    retPalco = palco.getBoundingClientRect();
+    retAlvo = elementoAlvo ? elementoAlvo.getBoundingClientRect() : null;
+    ultimaMedida = performance.now();
+  }
+  window.addEventListener("scroll", remedir, { passive: true });
+
   function direcaoPara(px, py) {
-    const r = palco.getBoundingClientRect();
+    const r = retPalco;
     const cx = r.left + r.width * (CENTRO_OLHOS.x / LARGURA);
     const cy = r.top + r.height * (CENTRO_OLHOS.y / ALTURA);
     const dx = (px - cx) / Math.max(window.innerWidth * 0.36, 260);
@@ -121,14 +134,33 @@
   /* Olhar para um elemento (ex.: o campo que está sendo preenchido). */
   function olharPara(elemento) {
     elementoAlvo = elemento || null;
+    remedir();
     if (elementoAlvo) ultimoMovimento = performance.now();
   }
 
   /* Escala da imagem na tela, para converter deslocamentos da imagem em pixels. */
   let escala = 1;
-  const medir = () => { escala = palco.clientWidth / LARGURA; };
+  const medir = () => { escala = palco.clientWidth / LARGURA; remedir(); };
   medir();
   window.addEventListener("resize", medir);
+
+  /* Com o personagem fora da tela (ex.: celular rolado até o formulário), não há o que desenhar. */
+  let visivel = true;
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entradas) => { visivel = entradas[0].isIntersecting; }).observe(palco);
+  }
+
+  /* Só escreve no SVG/estilo quando o valor muda: em repouso, quase nada é redesenhado. */
+  const gravados = new WeakMap();
+  function definir(el, attr, valor) {
+    let g = gravados.get(el);
+    if (!g) { g = {}; gravados.set(el, g); }
+    if (g[attr] === valor) return;
+    g[attr] = valor;
+    if (attr === "transform-css") el.style.transform = valor;
+    else if (attr.startsWith("--")) el.style.setProperty(attr, valor);
+    else el.setAttribute(attr, valor);
+  }
 
   /* Piscadas */
   let piscadaInicio = -1;
@@ -155,9 +187,16 @@
   }
 
   function quadro(t) {
+    if (!visivel) {
+      ultimoQuadro = t;
+      requestAnimationFrame(quadro);
+      return;
+    }
+    if (t - ultimaMedida > 500) remedir();
+
     /* 1. Para onde olhar: elemento em foco, cursor ou olhar ocioso. */
-    if (elementoAlvo) {
-      const r = elementoAlvo.getBoundingClientRect();
+    if (elementoAlvo && retAlvo) {
+      const r = retAlvo;
       const d = direcaoPara(r.left + Math.min(r.width * 0.35, 160), r.top + r.height / 2);
       ponteiro.x = d.x;
       ponteiro.y = d.y;
@@ -221,17 +260,17 @@
       const conv = olhar.x * lado > 0 ? 0.8 : 1;
       const ix = o.neutro.x + olhar.x * 21 * conv;
       const iy = o.neutro.y + olhar.y * 12;
-      o.iris.setAttribute("transform", `translate(${fmt(ix)} ${fmt(iy)})`);
+      definir(o.iris, "transform", `translate(${fmt(ix)} ${fmt(iy)})`);
       /* o reflexo acompanha menos a íris: a luz vem de um ponto fixo */
-      o.brilho.setAttribute("transform",
+      definir(o.brilho, "transform",
         `translate(${fmt(o.neutro.x + olhar.x * 14 * conv)} ${fmt(o.neutro.y + olhar.y * 8)})`);
-      o.pupila.setAttribute("r", fmt(atual.pupila));
-      o.erro.setAttribute("opacity", fmt(limitar(atual.erro, 0, 1) * 0.8));
+      definir(o.pupila, "r", fmt(atual.pupila));
+      definir(o.erro, "opacity", fmt(limitar(atual.erro, 0, 1) * 0.8));
       const sup = palpebraSuperior(o, cobertura);
-      o.sup.setAttribute("d", sup.fundo);
-      o.cilio.setAttribute("d", sup.cilio);
-      o.cilio.setAttribute("opacity", fmt(limitar(cobertura * 6, 0, 1)));
-      o.inf.setAttribute("d", palpebraInferior(o, limitar(atual.palpInf, 0, 1)));
+      definir(o.sup, "d", sup.fundo);
+      definir(o.cilio, "d", sup.cilio);
+      definir(o.cilio, "opacity", fmt(limitar(cobertura * 6, 0, 1)));
+      definir(o.inf, "d", palpebraInferior(o, limitar(atual.palpInf, 0, 1)));
     });
 
     /* 7. Cabeça: vira para os lados (giro 3D), inclina para cima/baixo, tomba um pouco
@@ -247,13 +286,14 @@
     const tombar = gx * 1.6 + atual.inclinar * 0.6 + tremor * 0.8; // rotateZ (graus)
     const hx = (gx * 9 + tremor * 4) * escala;
     const hy = (gy * 6 + respirar * 0.8) * escala;
-    cabeca.style.transform =
+    definir(cabeca, "transform-css",
       `perspective(${fmt(1600 * escala)}px) translate(${fmt(hx)}px, ${fmt(hy)}px) ` +
-      `rotateY(${fmt(virar)}deg) rotateX(${fmt(acenar)}deg) rotate(${fmt(tombar)}deg)`;
-    corpo.style.transform = `translateY(${fmt(respirar * 1.6 * escala)}px)`;
+      `rotateY(${fmt(virar)}deg) rotateX(${fmt(acenar)}deg) rotate(${fmt(tombar)}deg)`);
+    definir(corpo, "transform-css", `translateY(${fmt(respirar * 1.6 * escala)}px)`);
 
-    /* 8. Núcleo do peito: pulsa e muda de cor com a expressão. */
-    palco.style.setProperty("--pulso", fmt(0.75 + Math.sin(t / (nome === "pensando" ? 260 : 900)) * 0.25));
+    /* 8. Núcleo do peito: pulsa e muda de cor com a expressão.
+          A variável fica no próprio núcleo, para não recalcular o estilo do palco inteiro. */
+    definir(nucleo || palco, "--pulso", fmt(0.75 + Math.sin(t / (nome === "pensando" ? 260 : 900)) * 0.25));
 
     requestAnimationFrame(quadro);
   }

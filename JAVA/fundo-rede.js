@@ -9,15 +9,24 @@
 
   const ctx = canvas.getContext("2d");
   const reduzirMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  /* As cores são lidas a cada quadro: assim a rede acompanha o modo alerta (vermelho). */
+  /* As cores vêm das variáveis CSS, para a rede acompanhar o modo alerta (vermelho).
+     Ler o estilo a cada quadro pesa; por isso só lemos durante ~0,7 s depois que a
+     classe do <html> muda (o tempo da transição de cor). */
   const estilo = getComputedStyle(document.documentElement);
   let COR_PONTO = "#00E5FF";
   let COR_LINHA = "#3D7BFF";
+  let lerCoresAte = performance.now() + 700;
   function lerCores() {
+    if (performance.now() > lerCoresAte) return;
     COR_PONTO = estilo.getPropertyValue("--nexus-primaria").trim() || COR_PONTO;
     COR_LINHA = estilo.getPropertyValue("--nexus-secundaria").trim() || COR_LINHA;
   }
+  new MutationObserver(() => { lerCoresAte = performance.now() + 700; })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   const DISTANCIA = 140;
+  const DISTANCIA2 = DISTANCIA * DISTANCIA;
+  const DISTANCIA_MOUSE = DISTANCIA * 1.3;
+  const DISTANCIA_MOUSE2 = DISTANCIA_MOUSE * DISTANCIA_MOUSE;
 
   /* Dobra espacial: os pontos disparam do centro para fora, como estrelas em alta velocidade. */
   let dobra = false;
@@ -49,15 +58,18 @@
   function desenhar() {
     ctx.clearRect(0, 0, largura, altura);
 
+    /* compara distâncias ao quadrado: a raiz só é calculada para os pares que se ligam */
+    ctx.lineWidth = 1;
     for (let i = 0; i < pontos.length; i++) {
       const a = pontos[i];
+      ctx.strokeStyle = COR_LINHA;
       for (let j = i + 1; j < pontos.length; j++) {
         const b = pontos[j];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d < DISTANCIA) {
-          ctx.globalAlpha = (1 - d / DISTANCIA) * 0.35;
-          ctx.strokeStyle = COR_LINHA;
-          ctx.lineWidth = 1;
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < DISTANCIA2) {
+          ctx.globalAlpha = (1 - Math.sqrt(d2) / DISTANCIA) * 0.35;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -65,9 +77,11 @@
         }
       }
       /* perto do cursor, o ponto acende e se liga a ele */
-      const dm = Math.hypot(a.x - mouse.x, a.y - mouse.y);
-      if (dm < DISTANCIA * 1.3) {
-        ctx.globalAlpha = (1 - dm / (DISTANCIA * 1.3)) * 0.5;
+      const mx = a.x - mouse.x;
+      const my = a.y - mouse.y;
+      const dm2 = mx * mx + my * my;
+      if (dm2 < DISTANCIA_MOUSE2) {
+        ctx.globalAlpha = (1 - Math.sqrt(dm2) / DISTANCIA_MOUSE) * 0.5;
         ctx.strokeStyle = COR_PONTO;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -76,13 +90,15 @@
       }
     }
 
+    /* todos os pontos num único desenho */
     ctx.fillStyle = COR_PONTO;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
     for (const p of pontos) {
-      ctx.globalAlpha = 0.7;
-      ctx.beginPath();
+      ctx.moveTo(p.x + p.r, p.y);
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
     }
+    ctx.fill();
     ctx.globalAlpha = 1;
   }
 
@@ -170,8 +186,17 @@
   };
 
   criarPontos();
+  /* No celular, a barra de endereço some/aparece ao rolar e dispara "resize" só na altura.
+     Nesse caso basta ajustar o canvas: recriar os pontos faria a rede "pular". */
   window.addEventListener("resize", () => {
-    criarPontos();
+    if (window.innerWidth === largura && Math.abs(window.innerHeight - altura) < 160) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      altura = window.innerHeight;
+      canvas.height = altura * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    } else {
+      criarPontos();
+    }
     if (reduzirMovimento) desenhar();
   });
 
