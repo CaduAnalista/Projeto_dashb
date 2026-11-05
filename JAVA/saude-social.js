@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
-const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ');
+const norm = v => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase().replace(/\s+/g,' ');
 const fmt = n => Number(n || 0).toLocaleString('pt-BR');
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const METRO = new Set('RIO DE JANEIRO|NITEROI|SAO GONCALO|DUQUE DE CAXIAS|NOVA IGUACU|SAO JOAO DE MERITI|BELFORD ROXO|NILOPOLIS|MESQUITA|QUEIMADOS|JAPERI|SEROPEDICA|ITAGUAI|MAGE|GUAPIMIRIM|ITABORAI|TANGUA|MARICA|CACHOEIRAS DE MACACU|RIO BONITO|PARACAMBI|PETROPOLIS'.split('|'));
@@ -74,43 +74,41 @@ function drawLabels(k){const map=A.maps[k];if(!map)return;if(A.labels[k]){map.re
  }
 }
 function closeModal(){if(!A.modal)return;A.modal.closed=true;A.modal.map?.remove();A.modal.element.remove();A.modal=null;}
-/* Janela de bairros (Rio de Janeiro e Niterói).
-   As posições vêm da tabela local BAIRROS_RJ (bairros-rj.js, malha oficial do IBGE)
-   e as variações de escrita da planilha são resolvidas pelo bairros-localizar.js.
-   Antes cada bairro era buscado na internet (Nominatim), um por vez, com 1,15 s
-   de espera entre as buscas: o Rio levava ~4 min. Agora a janela abre na hora,
-   sem internet para as posições, e nenhum nome de bairro sai do navegador. */
+function geocode(bairro,city){const key=city+'|'+bairro;if(A.cache.has(key))return Promise.resolve(A.cache.get(key));
+ const task=A.queue.then(async()=>{await new Promise(r=>setTimeout(r,1150));try{
+  const q=encodeURIComponent(bairro+', '+(city==='NITEROI'?'Niterói':'Rio de Janeiro')+', RJ, Brasil');
+  const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+q,{headers:{'Accept-Language':'pt-BR'}});
+  if(!res.ok)return null;const result=await res.json();if(!result.length)return null;
+  const lat=Number(result[0].lat),lng=Number(result[0].lon);
+  if(city==='RIO DE JANEIRO'&&(lat< -23.15||lat> -22.65||lng< -43.85||lng> -43.05))return null;
+  if(city==='NITEROI'&&(lat< -23.15||lat> -22.75||lng< -43.20||lng> -42.75))return null;
+  const pos=[lat,lng];A.cache.set(key,pos);return pos;
+ }catch{return null;}});A.queue=task.catch(()=>null);return task;
+}
 function openBairros(city){closeModal();if(!A.data)return;
- const LB=window.LocalizarBairro;
- /* junta as variações do mesmo bairro ("VL ISABEL" + "VILA ISABEL") pelo nome oficial */
- const grupos=new Map();
- for(const [key,n] of A.data.bairros){if(!key.startsWith(city+'|'))continue;
-  const original=key.split('|')[1],oficial=LB?LB.nomeOficial(city,original):null,nome=oficial||original;
-  const g=grupos.get(nome)||{bairro:nome,n:0,pos:oficial?LB.posicao(city,original):null};g.n+=n;grupos.set(nome,g);}
- const list=[...grupos.values()].sort((a,b)=>b.n-a.n);
- const noMapa=list.filter(p=>p.pos),semPos=list.length-noMapa.length;
- const total=list.reduce((s,p)=>s+p.n,0),vidasNoMapa=noMapa.reduce((s,p)=>s+p.n,0),element=document.createElement('div');element.className='v9-overlay';
- element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(city)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado por bairro, utilizando referências públicas. Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress"></div><div class="v9-rank">${list.map(p=>`<div><span>${esc(p.bairro)}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
+ const list=[...A.data.bairros].filter(([key])=>key.startsWith(city+'|')).map(([key,n])=>({bairro:key.split('|')[1],n})).sort((a,b)=>b.n-a.n);
+ const total=list.reduce((s,p)=>s+p.n,0),element=document.createElement('div');element.className='v9-overlay';
+ element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(city)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado por bairro, utilizando referências públicas. Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress">Preparando localização...</div><div class="v9-rank">${list.map(p=>`<div><span>${esc(p.bairro)}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
  document.body.appendChild(element);const modal={element,map:null,closed:false};A.modal=modal;
  element.querySelector('.v9-close').onclick=closeModal;element.onclick=e=>{if(e.target===element)closeModal();};
- const progresso=element.querySelector('.v9-progress');
  const center=city==='NITEROI'?[-22.90,-43.10]:[-22.93,-43.35];
  const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true}).setView(center,11);modal.map=map;
- /* Mapa de ruas do OpenStreetMap (escolha do autor: mais elegante que o fundo escuro).
-    ⚠️ O servidor do OpenStreetMap bloqueia ("403 Access blocked") páginas abertas direto
-    do arquivo (file://), que não dizem de qual site vêm; publicado (GitHub Pages) funciona. */
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
- if(!list.length){progresso.textContent='Nenhum bairro informado para este município.';setTimeout(()=>map.invalidateSize(),100);return;}
- /* mesma frase da versão anterior */
- progresso.textContent=`${noMapa.length} de ${list.length} bairros localizados. Todos os valores permanecem na lista.`;
- /* tudo de uma vez, mas só depois que a janela tem o tamanho final: o calor é um
-    canvas do tamanho do mapa, e desenhado antes disso ficava fraco e cortado */
- setTimeout(()=>{if(modal.closed)return;map.invalidateSize();
-  if(noMapa.length>1)map.fitBounds(noMapa.map(p=>p.pos),{padding:[35,35],maxZoom:12,animate:false});
-  const max=noMapa.length?noMapa[0].n:1;
-  if(noMapa.length)modal.heat=L.heatLayer(noMapa.map(p=>[...p.pos,heatIntensity(p.n,max)]),{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
-  for(const p of noMapa)L.circleMarker(p.pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.bairro,p.n,false)).addTo(map);
- },100);
+ setTimeout(()=>map.invalidateSize(),100);
+ if(!list.length){element.querySelector('.v9-progress').textContent='Nenhum bairro informado para este município.';return;}
+ const heatPoints=[],bounds=[];let found=0;
+ (async()=>{for(let i=0;i<list.length;i++){if(modal.closed)return;const p=list[i],pos=await geocode(p.bairro,city);if(modal.closed)return;
+  if(pos){found++;bounds.push(pos);heatPoints.push([...pos,heatIntensity(p.n,list[0].n)]);
+   L.circleMarker(pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.bairro,p.n,false)).addTo(map);
+   if(modal.heat)map.removeLayer(modal.heat);
+   modal.heat=L.heatLayer(heatPoints,{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+  }
+  element.querySelector('.v9-progress').textContent=`Localizados ${found} de ${i+1} bairros consultados (${list.length} no total)`;
+  if(i===Math.min(list.length-1,14)&&bounds.length>1)map.fitBounds(bounds,{padding:[35,35],maxZoom:12});
+ }
+ if(bounds.length>1)map.fitBounds(bounds,{padding:[35,35],maxZoom:12});
+ element.querySelector('.v9-progress').textContent=`${found} de ${list.length} bairros localizados. Todos os valores permanecem na lista.`;
+ })();
 }
 function setMode(k,mode){A.mode[k]=mode;const suffix=k==='metro'?'Metro':'Estado';for(const m of ['Calor','Bolhas','Ambos']){const b=$('btn'+m+suffix);if(b){const active=m.toLowerCase()===mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}}draw(k);}
 async function importExcel(e){const file=e.target.files?.[0];if(!file)return;const request=++A.request;closeModal();status('Lendo Excel...');try{
