@@ -22,7 +22,9 @@ function readExcel(book){for(const sheet of book.SheetNames){const rows=XLSX.uti
 function aggregate(rows){const cities=new Map(),bairros=new Map();let rj=0,metro=0;for(const r of rows){if(!['RJ','RIO DE JANEIRO'].includes(r.uf))continue;rj++;if(r.cidade)cities.set(r.cidade,(cities.get(r.cidade)||0)+1);if(METRO.has(r.cidade))metro++;if(r.cidade&&r.bairro){const k=r.cidade+'|'+r.bairro;bairros.set(k,(bairros.get(k)||0)+1);}}return {total:rows.length,rj,metro,cities,bairros};}
 function indicators(d){put('totalVidas',fmt(d.total));put('vidasRJ',fmt(d.rj));put('vidasMetropolitana',fmt(d.metro));put('totalMunicipios',fmt(d.cities.size));put('totalMapaMetropolitano',fmt(d.metro));put('totalMapaEstado',fmt(d.rj));put('totalBairrosMetro',fmt([...d.bairros.keys()].filter(k=>METRO.has(k.split('|')[0])).length));put('municipiosMapaEstado',fmt(d.cities.size));}
 function cityName(f){const p=f.properties||{};for(const k of ['name','nome','NM_MUN','NM_MUNICIP','municipio','MUNICIPIO','NOME'])if(p[k])return norm(p[k]);return '';}
-function popup(name,n,metro){return `<div class="v9-tip"><strong>${esc(name)}</strong><span>${fmt(n)} vidas</span>${metro&&['RIO DE JANEIRO','NITEROI'].includes(name)?'<small>Clique para explorar os bairros</small>':''}</div>`;}
+function popup(name,n,metro,estado=false){return `<div class="v9-tip"><strong>${esc(name)}</strong><span>${fmt(n)} vidas</span>${metro&&['RIO DE JANEIRO','NITEROI'].includes(name)?'<small>Clique para explorar os bairros</small>':''}${estado&&name==='RIO DE JANEIRO'?'<small>Clique para explorar os bairros do estado</small>':''}</div>`;}
+/* Mapa 02: só o município do Rio abre a janela, e ela traz os bairros de todas as cidades da planilha */
+const abreEstado=(metro,name)=>!metro&&name==='RIO DE JANEIRO';
 function initMaps(){if(A.maps.metro)return;for(const [k,id] of [['metro','mapaMetropolitano'],['estado','mapaEstado']]){
  const map=L.map(id,{preferCanvas:true,zoomControl:true,attributionControl:false,zoomSnap:.25}).setView(k==='metro'?[-22.85,-43.3]:[-22.65,-42.8],k==='metro'?9:8);
  map.getContainer().style.background='radial-gradient(ellipse at center,#102444,#08152b)';
@@ -40,9 +42,9 @@ function draw(k,fit=false){const map=A.maps[k],d=A.data;if(!map||!d||!A.geo)retu
  const points=[];
  A.boundaries[k]=L.geoJSON({type:'FeatureCollection',features},{pane:'v9borders',style:f=>{const n=d.cities.get(cityName(f))||0;return {color:n?'#44647c':'#283d57',weight:n?.95:.6,fillColor:'#10213d',fillOpacity:.035,interactive:true};},onEachFeature:(f,layer)=>{
   const name=cityName(f),n=d.cities.get(name)||0;
-  layer.bindTooltip(popup(name,n,metro),{sticky:true,direction:'top',opacity:.98,className:'v9-tooltip'});
-  layer.on('click',e=>{if(metro&&['RIO DE JANEIRO','NITEROI'].includes(name))openBairros(name);else L.popup({maxWidth:230}).setLatLng(e.latlng).setContent(popup(name,n,false)).openOn(map);});
-  if(metro&&['RIO DE JANEIRO','NITEROI'].includes(name))layer.on('mouseover',()=>layer.setStyle({weight:2.5,color:'#39d8f5'}));
+  layer.bindTooltip(popup(name,n,metro,!metro),{sticky:true,direction:'top',opacity:.98,className:'v9-tooltip'});
+  layer.on('click',e=>{if(metro&&['RIO DE JANEIRO','NITEROI'].includes(name))openBairros(name);else if(abreEstado(metro,name))openBairrosEstado();else L.popup({maxWidth:230}).setLatLng(e.latlng).setContent(popup(name,n,false)).openOn(map);});
+  if((metro&&['RIO DE JANEIRO','NITEROI'].includes(name))||abreEstado(metro,name))layer.on('mouseover',()=>layer.setStyle({weight:2.5,color:'#39d8f5'}));
   layer.on('mouseout',()=>A.boundaries[k]?.resetStyle(layer));
   if(n){const center=layer.getBounds().getCenter();points.push({name,n,center});}
  }}).addTo(map);
@@ -54,7 +56,7 @@ function draw(k,fit=false){const map=A.maps[k],d=A.data;if(!map||!d||!A.geo)retu
  }
  if(A.mode[k]!=='calor'){
   A.bubbles[k]=L.layerGroup().addTo(map);
-  for(const p of points)L.circleMarker(p.center,{pane:'v9borders',radius:Math.max(5,Math.min(23,4+18*Math.sqrt(p.n/max))),color:'#fff',weight:1,fillColor:p.n===max?'#ff243a':'#00c9f5',fillOpacity:.8}).bindTooltip(popup(p.name,p.n,metro),{className:'v9-tooltip'}).on('click',e=>{L.DomEvent.stopPropagation(e);if(metro&&['RIO DE JANEIRO','NITEROI'].includes(p.name))openBairros(p.name);else L.popup().setLatLng(e.latlng).setContent(popup(p.name,p.n,false)).openOn(map);}).addTo(A.bubbles[k]);
+  for(const p of points)L.circleMarker(p.center,{pane:'v9borders',radius:Math.max(5,Math.min(23,4+18*Math.sqrt(p.n/max))),color:'#fff',weight:1,fillColor:p.n===max?'#ff243a':'#00c9f5',fillOpacity:.8}).bindTooltip(popup(p.name,p.n,metro,!metro),{className:'v9-tooltip'}).on('click',e=>{L.DomEvent.stopPropagation(e);if(metro&&['RIO DE JANEIRO','NITEROI'].includes(p.name))openBairros(p.name);else if(abreEstado(metro,p.name))openBairrosEstado();else L.popup().setLatLng(e.latlng).setContent(popup(p.name,p.n,false)).openOn(map);}).addTo(A.bubbles[k]);
  }
  if(fit){const b=A.boundaries[k].getBounds();if(b.isValid())map.fitBounds(b,{padding:[20,20],animate:false});}
  $(metro?'placeholderMetro':'placeholderEstado')?.classList.add('oculto');
@@ -76,30 +78,45 @@ function drawLabels(k){const map=A.maps[k];if(!map)return;if(A.labels[k]){map.re
 function closeModal(){if(!A.modal)return;A.modal.closed=true;A.modal.map?.remove();A.modal.element.remove();A.modal=null;}
 function geocode(bairro,city){const key=city+'|'+bairro;if(A.cache.has(key))return Promise.resolve(A.cache.get(key));
  const task=A.queue.then(async()=>{await new Promise(r=>setTimeout(r,1150));try{
-  const q=encodeURIComponent(bairro+', '+(city==='NITEROI'?'Niterói':'Rio de Janeiro')+', RJ, Brasil');
+  /* Rio e Niterói como antes; as outras cidades (janela do mapa 02) vão com o próprio nome */
+  const cidade=city==='NITEROI'?'Niterói':city==='RIO DE JANEIRO'?'Rio de Janeiro':city;
+  const q=encodeURIComponent(bairro+', '+cidade+', RJ, Brasil');
   const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+q,{headers:{'Accept-Language':'pt-BR'}});
   if(!res.ok)return null;const result=await res.json();if(!result.length)return null;
   const lat=Number(result[0].lat),lng=Number(result[0].lon);
   if(city==='RIO DE JANEIRO'&&(lat< -23.15||lat> -22.65||lng< -43.85||lng> -43.05))return null;
   if(city==='NITEROI'&&(lat< -23.15||lat> -22.75||lng< -43.20||lng> -42.75))return null;
+  /* demais cidades: só aceita resultado dentro do estado do RJ */
+  if(city!=='RIO DE JANEIRO'&&city!=='NITEROI'&&(lat< -23.40||lat> -20.70||lng< -45.00||lng> -40.90))return null;
   const pos=[lat,lng];A.cache.set(key,pos);return pos;
  }catch{return null;}});A.queue=task.catch(()=>null);return task;
 }
-function openBairros(city){closeModal();if(!A.data)return;
- const list=[...A.data.bairros].filter(([key])=>key.startsWith(city+'|')).map(([key,n])=>({bairro:key.split('|')[1],n})).sort((a,b)=>b.n-a.n);
+/* Mapa 01: bairros do Rio ou de Niterói (como sempre foi) */
+function openBairros(city){if(!A.data)return;
+ const list=[...A.data.bairros].filter(([key])=>key.startsWith(city+'|')).map(([key,n])=>({bairro:key.split('|')[1],city,label:key.split('|')[1],n}));
+ janelaBairros(city,list,city==='NITEROI'?[-22.90,-43.10]:[-22.93,-43.35],11);
+}
+/* Mapa 02: bairros de todas as cidades da planilha, com a cidade junto ao nome
+   ("CENTRO — NITEROI", "CENTRO — PETROPOLIS"), porque há nomes repetidos */
+function openBairrosEstado(){if(!A.data)return;
+ const list=[...A.data.bairros].map(([key,n])=>{const [city,bairro]=key.split('|');return {bairro,city,label:bairro+' — '+city,n};});
+ janelaBairros('ESTADO DO RIO DE JANEIRO',list,[-22.45,-42.85],8);
+}
+/* A janela (igual para os dois mapas; só muda o título e a lista) */
+function janelaBairros(titulo,list,center,zoom){closeModal();
+ list.sort((a,b)=>b.n-a.n);
  const total=list.reduce((s,p)=>s+p.n,0),element=document.createElement('div');element.className='v9-overlay';
- element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(city)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado por bairro, utilizando referências públicas. Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress">Preparando localização...</div><div class="v9-rank">${list.map(p=>`<div><span>${esc(p.bairro)}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
+ element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(titulo)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado por bairro, utilizando referências públicas. Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress">Preparando localização...</div><div class="v9-rank">${list.map(p=>`<div><span>${esc(p.label)}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
  document.body.appendChild(element);const modal={element,map:null,closed:false};A.modal=modal;
  element.querySelector('.v9-close').onclick=closeModal;element.onclick=e=>{if(e.target===element)closeModal();};
- const center=city==='NITEROI'?[-22.90,-43.10]:[-22.93,-43.35];
- const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true}).setView(center,11);modal.map=map;
+ const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true}).setView(center,zoom);modal.map=map;
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
  setTimeout(()=>map.invalidateSize(),100);
  if(!list.length){element.querySelector('.v9-progress').textContent='Nenhum bairro informado para este município.';return;}
  const heatPoints=[],bounds=[];let found=0;
- (async()=>{for(let i=0;i<list.length;i++){if(modal.closed)return;const p=list[i],pos=await geocode(p.bairro,city);if(modal.closed)return;
+ (async()=>{for(let i=0;i<list.length;i++){if(modal.closed)return;const p=list[i],pos=await geocode(p.bairro,p.city);if(modal.closed)return;
   if(pos){found++;bounds.push(pos);heatPoints.push([...pos,heatIntensity(p.n,list[0].n)]);
-   L.circleMarker(pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.bairro,p.n,false)).addTo(map);
+   L.circleMarker(pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.label,p.n,false)).addTo(map);
    if(modal.heat)map.removeLayer(modal.heat);
    modal.heat=L.heatLayer(heatPoints,{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
   }

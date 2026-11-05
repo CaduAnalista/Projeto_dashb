@@ -219,6 +219,8 @@ Novos setores seguem o mesmo padrão: botão de importar planilha, filtros e ind
   - ⚠️ **Não mexer nesta janela sem pedido.** Em 05/11/2026 foi testada uma versão instantânea (posições locais da malha de bairros do IBGE 2022 + correção de nomes abreviados), e também um fundo escuro no lugar do mapa de ruas; o autor **rejeitou as duas** e pediu a versão original de volta (`saude-social.js` restaurado como estava). Os arquivos `bairros-rj.js` e `bairros-localizar.js` foram apagados.
   - Fundo: mapa de ruas do OpenStreetMap. ⚠️ Ele devolve "403 Access blocked" quando a página é aberta **direto do arquivo** (`file://`); publicado (GitHub Pages) ou por servidor local, funciona.
 - **Mapa 02 — Estado do Rio de Janeiro:** todos os municípios do RJ.
+  - **Janela de bairros do estado (pedido do autor, 05/11/2026):** no mapa 02, **só o município do Rio de Janeiro** abre a janela (dica "Clique para explorar os bairros do estado"; os outros municípios continuam com o balão do total). A janela é **igual à do mapa 01** (mesma função `janelaBairros`), com o título "ESTADO DO RIO DE JANEIRO — CONCENTRAÇÃO POR BAIRRO" e os bairros de **todas as cidades da planilha**, cada um como "BAIRRO — CIDADE" (há nomes repetidos, como CENTRO).
+  - Usa a mesma busca no Nominatim, um por vez: com a planilha real são 508 bairros em 54 cidades, **~10 min** (aceito pelo autor). Para cidades fora de Rio/Niterói, a busca vai com o nome da cidade e só aceita pontos dentro do estado do RJ. O mapa 01 não mudou.
 - O rodapé de cada mapa (maior concentração e percentual) existe no HTML, mas o JS o remove ao iniciar.
 - ⚠️ **Depende de internet**, ao contrário do resto do site: os contornos dos municípios vêm do GitHub (`tbrugz/geodata-br`), o mapa de bairros usa os mapas do OpenStreetMap, as bibliotecas vêm de CDN e a localização de cada bairro é buscada no **Nominatim**. Nessa busca, **os nomes dos bairros saem do navegador** (sem nome, CPF nem contagem), o que contraria a regra "nada é enviado" da seção 2; o autor preferiu manter assim.
 
@@ -241,6 +243,7 @@ Novos setores seguem o mesmo padrão: botão de importar planilha, filtros e ind
    - Bibliotecas por CDN: Leaflet 1.9.4, leaflet.heat 0.2.0, Lucide 0.468.0 e SheetJS **0.18.5** (o projeto usa o 0.20.3 de `LIB/`). O JS também tenta carregá-las de novo sozinho.
    - ✅ O `<script>` apontava para `../java/saude-social.js` (minúsculo), o que quebraria no GitHub Pages. Corrigido para `../JAVA/` em 05/11/2026. Sempre usar as pastas em maiúsculas (`HTML/`, `CSS/`, `JAVA/`, `ASSETS/`, `LIB/`).
    - ❌ Saúde e Social, tentativa 1 (janela de bairros mais rápida): **rejeitada pelo autor** em 05/11/2026 e desfeita. A janela voltou à versão original (seção 8).
+   - 🔄 Saúde e Social, melhoria 2: janela de bairros de todo o estado ao clicar no Rio no mapa 02 (seção 8). **Feita em 05/11/2026, aguardando aprovação do autor.**
    - Ainda depende de internet: contornos dos municípios (GitHub), mapa de ruas e Nominatim na janela de bairros, e bibliotecas (CDN).
    - Não aceita `.csv` (a seção 9 pede `.xlsx`, `.xls` e `.csv`).
    - Falta planilha de exemplo **fictícia** em `EXEMPLOS/`.
