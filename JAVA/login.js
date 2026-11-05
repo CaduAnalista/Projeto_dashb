@@ -22,7 +22,8 @@
 
   const PAGINAS_POR_PAINEL = {
     "Inteligência de Rede": "./inteligencia.html",
-    "Relacionamento": "./cad-cap.html"
+    "Relacionamento": "./cad-cap.html",
+    "Saúde e Social": "./saude-social.html",
   };
 
   // Mantenha aqui os usuários autorizados.
@@ -31,7 +32,7 @@
     {
       nome: "Visitante",
       email: "visitante@nexus.dev",
-      paineis: ["Inteligência de Rede", "Relacionamento"]
+      paineis: ["Inteligência de Rede", "Relacionamento", "Saúde e Social"]
     }
   ];
 
@@ -90,27 +91,32 @@
     fimAlerta = setTimeout(() => raiz.classList.remove("alerta"), 2000);
   }
 
-  /* Login aceito: abre um portal no centro da tela, a cena é sugada,
-     o fundo entra em dobra espacial e, no clarão, a página de destino abre. */
+  /* Login aceito: "mudança de realidade" (~2,8 s). A cena se desfaz em desfoque,
+     uma nebulosa de fumaça nasce no centro e toma a tela, o fundo entra em dobra
+     espacial e, coberta por uma névoa clara, a página de destino abre. */
+  const DURACAO_PORTAL = 2800;
+  let pararFumaca = null;
+
   function abrirPortal(destino) {
     const portal = document.createElement("div");
     portal.className = "portal" + (reduzirMovimento ? " simples" : "");
     portal.setAttribute("aria-hidden", "true");
-    portal.innerHTML =
-      '<div class="portal-abertura"><div class="portal-anel"></div><div class="portal-tunel"></div></div>' +
-      '<div class="portal-clarao"></div>';
-    /* o anel precisa crescer até cobrir a diagonal da tela */
-    const diagonal = Math.hypot(window.innerWidth, window.innerHeight);
-    portal.style.setProperty("--escala-final", String(Math.ceil((diagonal / 80) * 1.6)));
+    portal.innerHTML = '<div class="portal-nevoa"></div>';
     document.body.appendChild(portal);
     document.body.classList.add("portal-ativo");
+    if (window.PortalFumaca && !reduzirMovimento) pararFumaca = window.PortalFumaca.iniciar(portal, DURACAO_PORTAL);
     if (window.FundoRede) window.FundoRede.dobraEspacial();
-    if (window.SomPortal && !reduzirMovimento) window.SomPortal.tocar();
+    /* um erro no som nunca pode impedir a entrada */
+    try {
+      if (window.SomPortal && !reduzirMovimento) window.SomPortal.tocar();
+    } catch (erro) {
+      console.warn("Som do portal indisponível:", erro);
+    }
 
-    /* a página de destino continua o clarão e termina a transição */
+    /* a página de destino continua a névoa e a dissolve */
     try { sessionStorage.setItem("nexus-portal", "1"); } catch (erro) { /* sem armazenamento: só não há chegada animada */ }
 
-    window.setTimeout(() => { window.location.href = destino; }, reduzirMovimento ? 300 : 1600);
+    window.setTimeout(() => { window.location.href = destino; }, reduzirMovimento ? 300 : DURACAO_PORTAL);
   }
 
   /* Reações aos campos: o NEXUS olha para o campo e comenta. */
@@ -219,6 +225,7 @@
      ainda com o portal aberto: desfaz a transição. */
   window.addEventListener("pageshow", (event) => {
     if (!event.persisted) return;
+    if (pararFumaca) { pararFumaca(); pararFumaca = null; }
     document.querySelectorAll(".portal").forEach((p) => p.remove());
     document.body.classList.remove("portal-ativo");
     botao.disabled = false;

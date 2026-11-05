@@ -620,79 +620,44 @@ button:focus-visible,
   overflow: hidden;
 }
 
-/* A cena é "sugada" para o portal */
+/* Linha do tempo (2,8 s, igual a DURACAO_PORTAL no login.js e ao som):
+   0 → 2,4 s  a cena se desfaz em desfoque, como se a realidade derretesse;
+   0 → 2,8 s  a fumaça (canvas do portal-fumaca.js) nasce no centro e toma a tela;
+   1,8 → 2,7 s a névoa clara cobre tudo e a página de destino abre. */
 .portal-ativo .cena {
-  animation: sugar 1.35s cubic-bezier(0.6, 0, 0.9, 0.4) forwards;
+  animation: desfazer 2.4s cubic-bezier(0.45, 0, 0.55, 1) forwards;
 }
 
-@keyframes sugar {
-  to { transform: scale(0.55) rotate(-4deg); filter: blur(8px) brightness(1.8); opacity: 0; }
+@keyframes desfazer {
+  0% { transform: none; filter: blur(0) brightness(1); opacity: 1; }
+  45% { transform: scale(1.03); filter: blur(2px) brightness(1.15) saturate(1.2); opacity: 0.9; }
+  100% { transform: scale(1.12); filter: blur(22px) brightness(1.7) saturate(1.5); opacity: 0; }
 }
 
-.portal-ativo .fundo-grade::before { animation-duration: 0.6s; }
+.portal-ativo .fundo-grade::before { animation-duration: 1.2s; }
 
-/* Abertura: escala do anel (o JS define --escala-final para cobrir a tela toda) */
-.portal-abertura {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 80px;
-  height: 80px;
-  margin: -40px 0 0 -40px;
-  transform: scale(0);
-  animation: portal-abrir 1.35s cubic-bezier(0.7, 0, 0.25, 1) forwards;
-}
-
-@keyframes portal-abrir {
-  0% { transform: scale(0); opacity: 0; }
-  12% { opacity: 1; }
-  45% { transform: scale(1.6); }
-  100% { transform: scale(var(--escala-final, 30)); }
-}
-
-.portal-anel,
-.portal-tunel {
+/* Fumaça: o canvas é desenhado em meia resolução e esticado (o desfoque esconde isso) */
+.portal-fumaca {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  filter: blur(6px);
 }
 
-/* Borda de energia girando */
-.portal-anel {
-  background: conic-gradient(from 0deg, var(--nexus-primaria), var(--nexus-secundaria), var(--nexus-acento), #fff, var(--nexus-primaria));
-  -webkit-mask: radial-gradient(circle, transparent 0 58%, #000 60% 68%, transparent 71%);
-  mask: radial-gradient(circle, transparent 0 58%, #000 60% 68%, transparent 71%);
-  filter: drop-shadow(0 0 6px var(--nexus-primaria));
-  animation: girar-portal 0.7s linear infinite;
-}
-
-/* Miolo: túnel de anéis */
-.portal-tunel {
-  inset: 12%;
-  background:
-    radial-gradient(circle, #fff 0 4%, color-mix(in srgb, var(--nexus-primaria) 70%, #fff) 10%, transparent 34%),
-    repeating-radial-gradient(circle, transparent 0 5px, color-mix(in srgb, var(--nexus-primaria) 40%, transparent) 6px 7px),
-    radial-gradient(circle, #050812 40%, var(--nexus-fundo) 70%);
-  box-shadow: 0 0 40px var(--nexus-primaria), 0 0 120px var(--nexus-acento);
-  animation: girar-portal 2.4s linear infinite reverse;
-}
-
-@keyframes girar-portal { to { transform: rotate(360deg); } }
-
-/* Clarão final */
-.portal-clarao {
+/* Névoa final: clara, quase branca no centro e ciano nas bordas */
+.portal-nevoa {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle, #fff 0%, #B8FBFF 35%, var(--nexus-primaria) 75%, #062A3A 100%);
+  background: radial-gradient(ellipse at center, #F2FEFF 0%, #C9F7FF 30%, #7FDDF0 62%, #2F7FA6 100%);
   opacity: 0;
-  animation: clarao 0.5s 1.1s ease-in forwards;
+  animation: nevoa-cobrir 0.9s 1.8s cubic-bezier(0.4, 0, 0.6, 1) forwards;
 }
 
-@keyframes clarao { to { opacity: 1; } }
+@keyframes nevoa-cobrir { to { opacity: 1; } }
 
 /* Com menos movimento: só escurece e troca de página */
-.portal.simples .portal-abertura { display: none; }
-.portal.simples .portal-clarao { background: var(--nexus-fundo); animation: clarao 0.3s forwards; }
+.portal.simples .portal-nevoa { background: var(--nexus-fundo); animation: nevoa-cobrir 0.3s forwards; }
 
 /* =====================================================
    CELULAR E TABLET

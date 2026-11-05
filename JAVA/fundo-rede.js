@@ -116,10 +116,11 @@
   function desenharDobra() {
     const cx = largura / 2;
     const cy = altura / 2;
-    velocidadeDobra = Math.min(velocidadeDobra * 1.075 + 0.4, 70);
+    /* acelera aos poucos (transição de 2,2 s, sem tranco) */
+    velocidadeDobra = Math.min(velocidadeDobra * 1.045 + 0.25, 42);
 
-    /* rastro: apaga só um pouco do quadro anterior */
-    ctx.globalAlpha = 0.35;
+    /* rastro: apaga só um pouco do quadro anterior (rastros longos e macios) */
+    ctx.globalAlpha = 0.22;
     ctx.fillStyle = "#050812";
     ctx.fillRect(0, 0, largura, altura);
 

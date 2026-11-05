@@ -1,0 +1,590 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#08152b">
+
+  <title>ASSEFAZ | Distribuição Geográfica de Beneficiários</title>
+
+  <!-- FIM DA TRANSIÇÃO DE PORTAL (quando a página vem do login) -->
+  <script src="../JAVA/portal-chegada.js"></script>
+
+  <!-- CSS DO DASHBOARD -->
+  <link rel="stylesheet" href="../CSS/saude-social.css">
+
+  <!-- CSS DO LEAFLET -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+</head>
+
+<body>
+
+<div class="dashboard dashboard-mapas">
+
+  <!-- CABEÇALHO -->
+
+  <header class="dashboard-header">
+
+    <div class="header-left">
+
+      <div class="brand-icon">
+        <i data-lucide="map-pinned"></i>
+      </div>
+
+      <div class="header-title">
+
+        <span class="eyebrow">
+          ASSEFAZ • INTELIGÊNCIA DE REDE
+        </span>
+
+        <h1>
+          Distribuição Geográfica de Beneficiários
+        </h1>
+
+        <p>
+          Visualização territorial das vidas ativas no Rio de Janeiro
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="header-right">
+
+      <div class="status-base">
+
+        <span
+          class="status-dot"
+          id="statusDot">
+        </span>
+
+        <span id="statusBase">
+          Aguardando importação
+        </span>
+
+      </div>
+
+      <label class="btn-importar" for="arquivoExcel">
+
+        <i data-lucide="upload"></i>
+
+        <span>
+          Importar Excel
+        </span>
+
+      </label>
+
+      <input
+        type="file"
+        id="arquivoExcel"
+        accept=".xlsx,.xls,.xlsb"
+        hidden
+      >
+
+    </div>
+
+  </header>
+
+
+  <!-- INDICADORES RESUMIDOS -->
+
+  <section class="summary-strip">
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Total de vidas
+      </span>
+
+      <strong class="summary-value" id="totalVidas">
+        0
+      </strong>
+
+    </div>
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Vidas no RJ
+      </span>
+
+      <strong class="summary-value" id="vidasRJ">
+        0
+      </strong>
+
+    </div>
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Região Metropolitana
+      </span>
+
+      <strong
+        class="summary-value"
+        id="vidasMetropolitana">
+        0
+      </strong>
+
+    </div>
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Municípios com beneficiários
+      </span>
+
+      <strong
+        class="summary-value"
+        id="totalMunicipios">
+        0
+      </strong>
+
+    </div>
+
+    <div class="summary-item summary-file">
+
+      <span class="summary-label">
+        Arquivo
+      </span>
+
+      <strong
+        class="summary-value"
+        id="nomeArquivo">
+        Nenhuma planilha carregada
+      </strong>
+
+    </div>
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Atualizado em
+      </span>
+
+      <strong
+        class="summary-value"
+        id="ultimaAtualizacao">
+        --/--/----
+      </strong>
+
+    </div>
+
+  </section>
+
+
+  <!-- TÍTULO DOS MAPAS -->
+
+  <section class="maps-heading maps-heading-clean">
+
+    <div class="maps-heading-left">
+
+      <h2>
+        Análise de Concentração Geográfica
+      </h2>
+
+      <p>
+        Distribuição territorial de beneficiários por município
+      </p>
+
+    </div>
+
+    <div class="maps-heading-right">
+
+      <span class="label-note">
+        Visualização geográfica de vidas ativas
+      </span>
+
+    </div>
+
+  </section>
+
+
+  <!-- PAINEL DOS MAPAS -->
+
+  <main class="maps-grid maps-grid-large">
+
+
+    <!-- MAPA 01 -->
+
+    <section class="map-panel map-panel-large">
+
+      <div class="map-panel-header">
+
+        <div class="map-panel-title">
+
+          <span class="map-number">
+            MAPA 01
+          </span>
+
+          <h3>
+            Rio de Janeiro e Região Metropolitana
+          </h3>
+
+          <p>
+            Distribuição por município • Rio de Janeiro e Niterói em destaque
+          </p>
+
+        </div>
+
+        <div class="map-header-meta">
+
+          <div class="map-meta-box">
+
+            <span>
+              Total de vidas
+            </span>
+
+            <strong id="totalMapaMetropolitano">
+              0
+            </strong>
+
+          </div>
+
+          <div class="map-meta-box">
+
+            <span>
+              Bairros identificados
+            </span>
+
+            <strong id="totalBairrosMetro">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- CONTROLES MAPA 01 -->
+
+      <div class="map-controls map-controls-clean">
+
+        <div class="map-view-options">
+
+          <button
+            type="button"
+            class="map-mode active"
+            id="btnCalorMetro">
+            Calor
+          </button>
+
+          <button
+            type="button"
+            class="map-mode"
+            id="btnBolhasMetro">
+            Bolhas
+          </button>
+
+          <button
+            type="button"
+            class="map-mode"
+            id="btnAmbosMetro">
+            Ambos
+          </button>
+
+        </div>
+
+        <div class="map-controls-right">
+
+          <span class="map-label-info">
+            Rio de Janeiro e Niterói destacados
+          </span>
+
+          <button
+            type="button"
+            class="map-reset"
+            id="btnResetMetro"
+            title="Restaurar mapa"
+            aria-label="Restaurar mapa metropolitano">
+
+            <i data-lucide="maximize"></i>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- ÁREA DO MAPA 01 -->
+
+      <div
+        class="map-canvas map-canvas-large"
+        id="mapaMetropolitano"
+        aria-label="Mapa da Região Metropolitana">
+
+        <div
+          class="map-placeholder"
+          id="placeholderMetro">
+
+          <i data-lucide="map-pinned"></i>
+
+          <strong>
+            Mapa da Região Metropolitana
+          </strong>
+
+          <span>
+            Importe a planilha para visualizar os dados geográficos.
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <!-- RODAPÉ MAPA 01 -->
+
+      <div class="map-panel-footer">
+
+        <div class="map-footer-info">
+
+          <span>
+            Maior concentração
+          </span>
+
+          <strong id="maiorBairroMetro">
+            —
+          </strong>
+
+        </div>
+
+        <div class="map-footer-info align-right">
+
+          <span>
+            Percentual metropolitano
+          </span>
+
+          <strong id="percentualMetropolitana">
+            0%
+          </strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- MAPA 02 -->
+
+    <section class="map-panel map-panel-large">
+
+      <div class="map-panel-header">
+
+        <div class="map-panel-title">
+
+          <span class="map-number">
+            MAPA 02
+          </span>
+
+          <h3>
+            Estado do Rio de Janeiro
+          </h3>
+
+          <p>
+            Concentração de beneficiários por município
+          </p>
+
+        </div>
+
+        <div class="map-header-meta">
+
+          <div class="map-meta-box">
+
+            <span>
+              Total de vidas
+            </span>
+
+            <strong id="totalMapaEstado">
+              0
+            </strong>
+
+          </div>
+
+          <div class="map-meta-box">
+
+            <span>
+              Municípios identificados
+            </span>
+
+            <strong id="municipiosMapaEstado">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- CONTROLES MAPA 02 -->
+
+      <div class="map-controls map-controls-clean">
+
+        <div class="map-view-options">
+
+          <button
+            type="button"
+            class="map-mode active"
+            id="btnCalorEstado">
+            Calor
+          </button>
+
+          <button
+            type="button"
+            class="map-mode"
+            id="btnBolhasEstado">
+            Bolhas
+          </button>
+
+          <button
+            type="button"
+            class="map-mode"
+            id="btnAmbosEstado">
+            Ambos
+          </button>
+
+        </div>
+
+        <div class="map-controls-right">
+
+          <span class="map-label-info">
+            Passe o mouse para visualizar as vidas
+          </span>
+
+          <button
+            type="button"
+            class="map-reset"
+            id="btnResetEstado"
+            title="Restaurar mapa"
+            aria-label="Restaurar mapa do estado">
+
+            <i data-lucide="maximize"></i>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- ÁREA DO MAPA 02 -->
+
+      <div
+        class="map-canvas map-canvas-large"
+        id="mapaEstado"
+        aria-label="Mapa do Estado do Rio de Janeiro">
+
+        <div
+          class="map-placeholder"
+          id="placeholderEstado">
+
+          <i data-lucide="map"></i>
+
+          <strong>
+            Mapa do Estado do Rio de Janeiro
+          </strong>
+
+          <span>
+            Importe a planilha para visualizar os dados geográficos.
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <!-- RODAPÉ MAPA 02 -->
+
+      <div class="map-panel-footer">
+
+        <div class="map-footer-info">
+
+          <span>
+            Maior concentração
+          </span>
+
+          <strong id="maiorMunicipioEstado">
+            —
+          </strong>
+
+        </div>
+
+        <div class="map-footer-info align-right">
+
+          <span>
+            Percentual no RJ
+          </span>
+
+          <strong id="percentualRJ">
+            0%
+          </strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- RODAPÉ GERAL -->
+
+  <footer class="dashboard-footer">
+
+    <div class="footer-left">
+      <span>
+        ASSEFAZ • Inteligência de Rede
+      </span>
+    </div>
+
+    <div class="footer-center">
+      <span>
+        Dashboard de distribuição geográfica de beneficiários
+      </span>
+    </div>
+
+    <div class="footer-right">
+      <span>
+        Base ativa importada pelo usuário
+      </span>
+    </div>
+
+  </footer>
+
+</div>
+
+
+<!-- BIBLIOTECAS JAVASCRIPT -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+
+<!-- POSIÇÃO DOS BAIRROS (tabela local, sem internet) -->
+<script src="../JAVA/bairros-rj.js"></script>
+<script src="../JAVA/bairros-localizar.js"></script>
+
+<!-- JAVASCRIPT DO DASHBOARD -->
+<script src="../JAVA/saude-social.js"></script>
+
+</body>
+</html>

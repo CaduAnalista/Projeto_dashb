@@ -1,0 +1,1372 @@
+
+/* ==========================================================
+   ASSEFAZ — DASHBOARD GEOGRÁFICO V3
+   MAPAS AMPLIADOS | SEM CARTÕES | TELA ÚNICA
+   Identidade visual: Azul-marinho + Ciano
+========================================================== */
+
+/* ==========================================================
+   1. VARIÁVEIS
+========================================================== */
+
+:root {
+    --bg: #080d1b;
+    --bg-secondary: #0d1426;
+    --panel: #141c31;
+    --panel-hover: #19243b;
+
+    --cyan: #00d5e9;
+    --cyan-light: #75f0ff;
+    --cyan-dark: #009bb5;
+
+    --white: #ffffff;
+    --text: #e9f1ff;
+    --muted: #a6b7d2;
+    --muted-light: #cbd8ea;
+
+    --border: #2a3654;
+    --green: #00dda5;
+    --yellow: #ffc56d;
+    --red: #ff607b;
+
+    --radius: 12px;
+    --shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================
+   2. RESET
+========================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+.btn-importar:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+}
+
+/* ==========================================================
+   3. DASHBOARD — TELA INTEIRA
+========================================================== */
+
+.dashboard {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 9px;
+    padding: 12px 20px 8px;
+
+    overflow: hidden;
+}
+
+.dashboard-mapas {
+    max-width: none;
+    margin: 0 auto;
+}
+
+/* ==========================================================
+   4. CABEÇALHO
+========================================================== */
+
+.dashboard-header {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 18px;
+    padding-bottom: 11px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+}
+
+.brand-icon {
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #10334a;
+    border: 1px solid #146e8c;
+    border-radius: 11px;
+
+    color: var(--cyan);
+}
+
+.brand-icon svg {
+    width: 23px;
+    height: 23px;
+}
+
+.header-title {
+    min-width: 0;
+}
+
+.eyebrow {
+    display: block;
+    color: var(--cyan);
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.3px;
+}
+
+.header-title h1 {
+    margin: 3px 0 0;
+
+    color: var(--white);
+    font-size: clamp(17px, 1.6vw, 25px);
+    font-weight: 750;
+    line-height: 1.25;
+    letter-spacing: -0.4px;
+}
+
+.header-title p {
+    margin: 4px 0 0;
+
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================
+   5. STATUS E IMPORTAÇÃO
+========================================================== */
+
+.status-base {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    color: var(--muted-light);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+
+    background: var(--yellow);
+    border-radius: 50%;
+}
+
+.status-dot.ativo {
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(0, 221, 165, 0.35);
+}
+
+.status-dot.erro {
+    background: var(--red);
+}
+
+.btn-importar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 37px;
+    padding: 9px 15px;
+
+    color: #071725;
+    background: var(--cyan);
+
+    border: 1px solid var(--cyan);
+    border-radius: 9px;
+
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-importar:hover {
+    background: var(--cyan-light);
+    transform: translateY(-1px);
+}
+
+.btn-importar svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ==========================================================
+   6. RESUMO COMPACTO — SEM CARTÕES
+========================================================== */
+
+.summary-strip {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+    min-width: 0;
+
+    padding: 8px 14px;
+
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 2px;
+    min-width: 0;
+}
+
+.summary-item + .summary-item {
+    padding-left: 15px;
+    border-left: 1px solid var(--border);
+}
+
+.summary-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.summary-value {
+    display: block;
+
+    color: var(--white);
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.2;
+
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary-item:first-child .summary-value {
+    color: var(--cyan);
+}
+
+.summary-file {
+    max-width: 190px;
+}
+
+.summary-file .summary-value {
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.summary-item:last-child .summary-value {
+    font-size: 11px;
+    font-weight: 650;
+}
+
+/* ==========================================================
+   7. TÍTULO DOS MAPAS
+========================================================== */
+
+.maps-heading {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 15px;
+    padding: 2px 0;
+}
+
+.maps-heading-left h2 {
+    margin: 0;
+
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.maps-heading-left p {
+    margin: 3px 0 0;
+
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.maps-heading-right {
+    color: var(--muted-light);
+    font-size: 10px;
+}
+
+.label-note {
+    display: inline-block;
+    padding: 5px 9px;
+
+    background: rgba(0, 213, 233, 0.07);
+    border: 1px solid rgba(0, 213, 233, 0.15);
+    border-radius: 6px;
+}
+
+/* ==========================================================
+   8. GRID DOS MAPAS — ÁREA PRINCIPAL
+========================================================== */
+
+.maps-grid {
+    flex: 1 1 0;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+
+    min-height: 0;
+    min-width: 0;
+}
+
+.maps-grid-large {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+/* ==========================================================
+   9. PAINEL DO MAPA
+========================================================== */
+
+.map-panel {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+    min-height: 0;
+
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.map-panel-large {
+    height: 100%;
+}
+
+.map-panel-header {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 14px;
+    padding: 12px 16px 8px;
+}
+
+.map-panel-title {
+    min-width: 0;
+}
+
+.map-number {
+    display: block;
+
+    color: var(--cyan);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.3px;
+}
+
+.map-panel-title h3 {
+    margin: 3px 0 0;
+
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.3;
+}
+
+.map-panel-title p {
+    margin: 4px 0 0;
+
+    color: var(--muted);
+    font-size: 10px;
+}
+
+/* ==========================================================
+   10. INFORMAÇÕES COMPACTAS DOS MAPAS
+========================================================== */
+
+.map-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+}
+
+.map-meta-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+
+    padding: 6px 10px;
+
+    background: rgba(0, 213, 233, 0.055);
+    border: 1px solid rgba(0, 213, 233, 0.17);
+    border-radius: 8px;
+}
+
+.map-meta-box span {
+    color: var(--muted);
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.map-meta-box strong {
+    color: var(--cyan);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================
+   11. CONTROLES
+========================================================== */
+
+.map-controls {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+    padding: 0 15px 9px;
+}
+
+.map-view-options {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 3px;
+    padding: 3px;
+
+    background: #0c1325;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.map-mode {
+    min-height: 28px;
+    padding: 5px 13px;
+
+    color: var(--muted-light);
+    background: transparent;
+
+    border: 1px solid transparent;
+    border-radius: 6px;
+
+    font-size: 11px;
+    font-weight: 650;
+    transition: 0.2s ease;
+}
+
+.map-mode:hover {
+    background: var(--panel-hover);
+    color: var(--white);
+}
+
+.map-mode.active {
+    background: var(--cyan);
+    color: #071725;
+    font-weight: 800;
+}
+
+.map-controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.map-label-info {
+    color: var(--muted);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.map-reset {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--muted-light);
+    background: #0c1325;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.map-reset:hover {
+    color: var(--cyan);
+    border-color: var(--cyan-dark);
+}
+
+.map-reset svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* ==========================================================
+   12. ÁREA DOS MAPAS — PRIORIDADE MÁXIMA
+========================================================== */
+
+.map-canvas {
+    position: relative;
+
+    flex: 1 1 0;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    background: #0b1527;
+
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.map-canvas-large {
+    flex-grow: 1;
+}
+
+/* ==========================================================
+   13. PLACEHOLDER
+========================================================== */
+
+.map-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+    padding: 20px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(0, 213, 233, 0.06),
+            transparent 65%
+        ),
+        #0b1527;
+
+    text-align: center;
+}
+
+.map-placeholder svg {
+    width: 40px;
+    height: 40px;
+
+    color: var(--cyan);
+}
+
+.map-placeholder strong {
+    color: var(--white);
+    font-size: 13px;
+}
+
+.map-placeholder span {
+    max-width: 300px;
+
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.map-placeholder.oculto,
+.map-placeholder.hidden {
+    display: none;
+}
+
+/* ==========================================================
+   14. RODAPÉ DE CADA MAPA
+========================================================== */
+
+.map-panel-footer {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+    padding: 9px 16px;
+}
+
+.map-footer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.map-footer-info span {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.map-footer-info strong {
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.map-footer-info.align-right {
+    text-align: right;
+}
+
+/* ==========================================================
+   15. RODAPÉ GERAL
+========================================================== */
+
+.dashboard-footer {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+    padding-top: 6px;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.footer-left,
+.footer-center,
+.footer-right {
+    min-width: 0;
+}
+
+.footer-center {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ==========================================================
+   16. LEAFLET — APARÊNCIA DO MAPA
+========================================================== */
+
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+
+    background: #0b1527;
+
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.leaflet-control-zoom {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+    background: #16243d !important;
+    color: var(--cyan) !important;
+    border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+    background: #243752 !important;
+}
+
+.leaflet-control-attribution {
+    background: rgba(8, 13, 27, 0.88) !important;
+    color: #b5c7e4 !important;
+    font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+    color: var(--cyan) !important;
+}
+
+/* ==========================================================
+   17. RÓTULOS DE DADOS
+   Preparado para rótulos permanentes via JavaScript
+========================================================== */
+
+.leaflet-tooltip {
+    background: #15223b;
+    color: var(--white);
+
+    border: 1px solid #3c5879;
+    border-radius: 6px;
+
+    padding: 5px 8px;
+
+    font-size: 11px;
+    font-weight: 750;
+
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+.leaflet-tooltip::before {
+    border-top-color: #15223b;
+}
+
+.leaflet-tooltip.label-permanent {
+    background: rgba(10, 22, 41, 0.9);
+    color: #ffffff;
+
+    border: 1px solid rgba(0, 213, 233, 0.5);
+    border-radius: 5px;
+
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+
+    pointer-events: none;
+}
+
+.leaflet-tooltip.label-permanent::before {
+    display: none;
+}
+
+.leaflet-popup-content-wrapper {
+    background: #17233b;
+    color: var(--white);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.leaflet-popup-tip {
+    background: #17233b;
+}
+
+.leaflet-popup-content {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.leaflet-popup-content strong {
+    color: var(--cyan);
+}
+
+/* ==========================================================
+   18. MONITORES GRANDES
+========================================================== */
+
+@media (min-width: 1500px) {
+
+    .dashboard {
+        padding: 14px 24px 10px;
+        gap: 11px;
+    }
+
+    .map-panel-title h3 {
+        font-size: 16px;
+    }
+
+    .map-panel-header {
+        padding: 14px 18px 10px;
+    }
+
+    .map-controls {
+        padding: 0 18px 10px;
+    }
+
+    .map-panel-footer {
+        padding: 11px 18px;
+    }
+
+    .summary-value {
+        font-size: 19px;
+    }
+}
+
+/* ==========================================================
+   19. NOTEBOOKS
+========================================================== */
+
+@media (max-width: 1200px) {
+
+    .dashboard {
+        padding: 10px 12px 7px;
+        gap: 8px;
+    }
+
+    .summary-strip {
+        padding: 7px 10px;
+        gap: 7px;
+    }
+
+    .summary-item + .summary-item {
+        padding-left: 9px;
+    }
+
+    .summary-label {
+        font-size: 9px;
+    }
+
+    .summary-value {
+        font-size: 15px;
+    }
+
+    .map-header-meta {
+        gap: 5px;
+    }
+
+    .map-meta-box {
+        padding: 5px 7px;
+    }
+
+    .map-meta-box strong {
+        font-size: 16px;
+    }
+
+    .map-panel-title h3 {
+        font-size: 13px;
+    }
+
+    .map-label-info {
+        display: none;
+    }
+}
+
+/* ==========================================================
+   20. TELAS COM ALTURA REDUZIDA
+   Libera mais espaço para os mapas
+========================================================== */
+
+@media (max-height: 800px) {
+
+    .dashboard {
+        padding: 8px 12px 6px;
+        gap: 7px;
+    }
+
+    .dashboard-header {
+        padding-bottom: 7px;
+    }
+
+    .brand-icon {
+        width: 35px;
+        height: 35px;
+        flex-basis: 35px;
+    }
+
+    .header-title p {
+        display: none;
+    }
+
+    .summary-strip {
+        padding: 5px 11px;
+    }
+
+    .summary-value {
+        font-size: 15px;
+    }
+
+    .maps-heading-left p {
+        display: none;
+    }
+
+    .maps-heading {
+        padding: 0;
+    }
+
+    .map-panel-header {
+        padding: 7px 12px 5px;
+    }
+
+    .map-panel-title p {
+        display: none;
+    }
+
+    .map-controls {
+        padding: 0 11px 6px;
+    }
+
+    .map-mode {
+        min-height: 25px;
+        padding: 4px 10px;
+    }
+
+    .map-panel-footer {
+        padding: 6px 12px;
+    }
+
+    .dashboard-footer {
+        padding-top: 4px;
+    }
+}
+
+/* ==========================================================
+   21. TELAS ESTREITAS
+   Mantém os mapas lado a lado
+========================================================== */
+
+@media (max-width: 900px) {
+
+    .header-title h1 {
+        font-size: 16px;
+    }
+
+    .header-title p,
+    .status-base,
+    .maps-heading-right {
+        display: none;
+    }
+
+    .btn-importar {
+        padding: 7px 10px;
+        font-size: 10px;
+    }
+
+    .summary-file,
+    .summary-item:last-child {
+        display: none;
+    }
+
+    .map-header-meta {
+        display: none;
+    }
+
+    .map-panel-title h3 {
+        font-size: 12px;
+    }
+
+    .map-mode {
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+
+    .map-panel-footer strong {
+        font-size: 10px;
+    }
+
+    .footer-center {
+        display: none;
+    }
+}
+
+/* ==========================================================
+   22. TELAS MUITO BAIXAS
+========================================================== */
+
+@media (max-height: 600px) {
+
+    .dashboard-footer {
+        display: none;
+    }
+
+    .maps-heading {
+        display: none;
+    }
+
+    .summary-strip {
+        padding: 4px 10px;
+    }
+
+    .summary-label {
+        font-size: 9px;
+    }
+
+    .summary-value {
+        font-size: 13px;
+    }
+
+    .map-panel-header {
+        padding: 5px 10px;
+    }
+
+    .map-panel-footer {
+        padding: 4px 10px;
+    }
+}
+/* Rótulos permanentes dos municípios */
+
+.assefaz-data-label {
+    background: rgba(8, 18, 36, 0.88);
+    border: 1px solid rgba(117, 240, 255, 0.45);
+    border-radius: 6px;
+    color: #ffffff;
+    text-align: center;
+    padding: 3px 5px;
+    width: 110px !important;
+    height: auto !important;
+    min-height: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    pointer-events: none;
+}
+/* =========================================
+   RÓTULOS GEOGRÁFICOS
+========================================= */
+
+.assefaz-callout {
+  background: transparent !important;
+  border: none !important;
+}
+
+.assefaz-data-label {
+  width: 146px;
+  height: 46px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 8px;
+
+  background: rgba(8, 19, 39, 0.97);
+  border: 1px solid var(--label-color);
+  border-radius: 8px;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.data-label-name {
+  display: block;
+  max-width: 100%;
+
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-label-value {
+  color: var(--label-color);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* =========================================
+   LEGENDA DOS MAPAS
+========================================= */
+
+.assefaz-legend {
+  width: 214px;
+  padding: 13px;
+
+  background: rgba(8, 19, 39, 0.96);
+  border: 1px solid #304561;
+  border-radius: 10px;
+
+  color: #ffffff;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+
+  font-family: Arial, sans-serif;
+}
+
+.legend-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.legend-subtitle {
+  margin: 5px 0 11px;
+
+  color: #a9bfd8;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 7px;
+}
+
+.legend-color {
+  width: 19px;
+  height: 13px;
+  flex-shrink: 0;
+
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.legend-label {
+  flex: 1;
+
+  color: #e9f1fc;
+  font-size: 10px;
+}
+
+.legend-range {
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.legend-note {
+  margin-top: 9px;
+  padding-top: 8px;
+
+  border-top: 1px solid #304561;
+
+  color: #8da7c4;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* ==========================================================
+   23. CELULAR E TABLET TOUCH — SEM ALTERAR DESKTOP
+   Regras restritas a dispositivos com toque primário.
+   ========================================================== */
+@media screen and (hover: none) and (pointer: coarse) and (max-width: 1100px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 100%;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dashboard,
+  .dashboard.dashboard-mapas {
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: 12px !important;
+    gap: 14px !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-left { flex: 1 1 220px; }
+  .header-right { flex: 0 1 auto; flex-wrap: wrap; gap: 8px; }
+  .header-title h1 { font-size: clamp(16px, 4vw, 22px); }
+
+  .summary-strip {
+    display: flex;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .summary-item { flex: 0 0 auto; }
+
+  .maps-heading { flex-wrap: wrap; }
+
+  .maps-grid,
+  .maps-grid-large {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 20px !important;
+  }
+
+  .map-panel,
+  .map-panel-large {
+    display: flex;
+    flex-direction: column;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow: hidden;
+  }
+
+  .map-panel-header {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px !important;
+  }
+  .map-panel-title h3 {
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+  .map-panel-title p { display: block; }
+  .map-header-meta { display: flex; }
+
+  .map-controls {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 12px !important;
+  }
+  .map-view-options { max-width: 100%; }
+  .map-mode {
+    min-height: 38px;
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+  .map-reset { width: 38px; height: 38px; }
+
+  .map-canvas,
+  .map-canvas-large {
+    display: block;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: 70dvh !important;
+    min-height: 560px !important;
+  }
+
+  .map-panel-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px !important;
+  }
+  .dashboard-footer { flex-wrap: wrap; }
+
+  /* Detalhamento dos bairros em telas touch */
+  .v9-overlay { padding: 8px !important; }
+  .v9-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 94dvh !important;
+    max-height: 94dvh !important;
+  }
+  .v9-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(280px, 1fr) 190px !important;
+    min-height: 0;
+  }
+  .v9-grid aside { overflow-y: auto; }
+  .leaflet-control-zoom a {
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+  }
+}
+
+/* Celular touch na horizontal: mapas altos e página com rolagem */
+@media screen and (hover: none) and (pointer: coarse)
+       and (max-width: 1100px) and (orientation: landscape) {
+  .dashboard,
+  .dashboard.dashboard-mapas {
+    height: auto !important;
+    overflow: visible !important;
+    padding: 10px 14px !important;
+  }
+  .map-canvas,
+  .map-canvas-large {
+    height: 750px !important;
+    min-height: 750px !important;
+  }
+  .map-panel-header { flex-direction: row !important; }
+  .map-panel-title h3 { font-size: 17px !important; }
+}
+
+/* Celulares estreitos: informações sem cortes */
+@media screen and (hover: none) and (pointer: coarse) and (max-width: 420px) {
+  .dashboard,
+  .dashboard.dashboard-mapas { padding: 10px !important; }
+  .map-panel-header { align-items: flex-start; }
+  .map-header-meta { flex-wrap: wrap; }
+  .map-mode { padding: 7px 9px; font-size: 11px; }
+  .map-canvas,
+  .map-canvas-large {
+    height: 72dvh !important;
+    min-height: 560px !important;
+  }
+}
