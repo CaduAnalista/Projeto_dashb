@@ -220,14 +220,16 @@ Novos setores seguem o mesmo padrão: botão de importar planilha, filtros e ind
 - **Indicadores:** Total de vidas (todas as linhas), Vidas no RJ (UF `RJ` ou `RIO DE JANEIRO`), Região Metropolitana, Municípios com beneficiários, nome do arquivo e data/hora da importação.
 - **Região Metropolitana** = lista fixa `METRO` no `saude-social.js` (22 municípios, incluindo Petrópolis).
 - **Mapa 01 — Rio de Janeiro e Região Metropolitana:** só os municípios da lista `METRO`; Rio de Janeiro e Niterói ganham rótulos fixos com o total de vidas. Clicar neles abre uma janela com a **concentração por bairro** (lista ordenada e mapa de calor aproximado).
-- **Janela de bairros (refeita em 05/11/2026, pedido do autor: abrir mais rápido; visual de ponto + calor mantido, escolha do autor):**
+- **Janela de bairros (refeita em 05/11/2026, pedido do autor: abrir mais rápido).** ⚠️ **O visual da janela não pode mudar** (pedido explícito do autor): mapa de ruas, calor, pontos vermelhos e os mesmos textos ("Mapa aproximado por bairro, utilizando referências públicas...", "X de Y bairros localizados. Todos os valores permanecem na lista."). Só a velocidade mudou.
+  - O calor e os pontos são desenhados 100 ms depois de abrir, quando o mapa já tem o tamanho final; desenhado antes, o calor ficava fraco e cortado.
   - Antes, cada bairro era buscado no Nominatim, um por vez, com 1,15 s de espera: com a planilha real (175 bairros no Rio, 37 em Niterói), ~4 min no Rio e ~1 min em Niterói.
   - Agora as posições vêm da tabela local `bairros-rj.js` (um ponto dentro de cada bairro, calculado da **malha oficial de bairros do IBGE, Censo 2022**). A janela abre na hora (~70 ms no teste), as posições não dependem de internet e **nenhum nome de bairro sai do navegador**.
   - As vidas continuam vindo da planilha a cada importação; a tabela só diz onde fica cada bairro.
   - `bairros-localizar.js` junta as variações de escrita no bairro oficial (correções fixas, abreviações como VL/JD/STA/S/PC/PRQ/MAL/FRG/CPO/RCR/VIG/PNT, parte antes de " - " "/" "," "(", nome cortado no fim e erro de digitação de 1–2 letras sem empate). Na lista, as variações aparecem somadas sob o nome oficial.
-  - Com a planilha real, ficam no mapa **3.625 de 3.634 vidas do Rio** e **494 de 495 de Niterói**. Os não reconhecidos ficam **só na lista**, marcados "sem localização no mapa" (decisão do autor): "FREGUESIA" sem dizer qual (Ilha ou Jacarepaguá), "NOROESTE", "IMBIRIBEIRA", e nomes de outra cidade ("ICARAI" no Rio, "DUQUE DE CAXIAS", "ADRIANOPOLIS", "NITEROI" em Niterói). Para corrigir um caso novo, acrescentar em `CORRECOES` no `bairros-localizar.js`.
+  - Com a planilha real, ficam no mapa **3.625 de 3.634 vidas do Rio** e **494 de 495 de Niterói**. Os não reconhecidos ficam **só na lista**, sem marca visual (decisão do autor; a lista é igual à de antes): "FREGUESIA" sem dizer qual (Ilha ou Jacarepaguá), "NOROESTE", "IMBIRIBEIRA", e nomes de outra cidade ("ICARAI" no Rio, "DUQUE DE CAXIAS", "ADRIANOPOLIS", "NITEROI" em Niterói). Para corrigir um caso novo, acrescentar em `CORRECOES` no `bairros-localizar.js`.
   - **Barra Olímpica** (criada em 2017) ainda não está na malha do IBGE: tem um ponto aproximado em `EXTRAS`.
-  - **Fundo da janela:** escuro, com o contorno dos municípios da Região Metropolitana (o mesmo GeoJSON dos mapas da página) e o município clicado em destaque. ⚠️ **Não usar o mapa de ruas do OpenStreetMap** (`tile.openstreetmap.org`): o servidor dele devolve "403 Access blocked" quando a página é aberta direto do arquivo (sem identificação do site). Removido em 05/11/2026 depois que o autor viu o erro.
+  - **Fundo da janela: mapa de ruas do OpenStreetMap** (`tile.openstreetmap.org`). **Escolha do autor (05/11/2026):** um fundo escuro com o contorno dos municípios foi testado e rejeitado ("o mapa de ruas é muito mais elegante"). Não trocar sem pedir.
+  - ⚠️ O servidor do OpenStreetMap devolve "403 Access blocked" quando a página é aberta **direto do arquivo** (`file://`), porque ela não diz de qual site vem. Publicado (GitHub Pages) ou por um servidor local, funciona. Para testar no PC, usar o servidor local (`.claude/launch.json`) em vez de abrir o HTML com dois cliques.
 - **Mapa 02 — Estado do Rio de Janeiro:** todos os municípios do RJ.
 - O rodapé de cada mapa (maior concentração e percentual) existe no HTML, mas o JS o remove ao iniciar.
 - ⚠️ **Depende de internet**, ao contrário do resto do site: os contornos dos municípios vêm do GitHub (`tbrugz/geodata-br`), e as bibliotecas vêm de CDN. ✅ A busca dos bairros no Nominatim (que enviava os nomes para fora) foi removida em 05/11/2026.
@@ -251,7 +253,7 @@ Novos setores seguem o mesmo padrão: botão de importar planilha, filtros e ind
    - Bibliotecas por CDN: Leaflet 1.9.4, leaflet.heat 0.2.0, Lucide 0.468.0 e SheetJS **0.18.5** (o projeto usa o 0.20.3 de `LIB/`). O JS também tenta carregá-las de novo sozinho.
    - ✅ O `<script>` apontava para `../java/saude-social.js` (minúsculo), o que quebraria no GitHub Pages. Corrigido para `../JAVA/` em 05/11/2026. Sempre usar as pastas em maiúsculas (`HTML/`, `CSS/`, `JAVA/`, `ASSETS/`, `LIB/`).
    - ✅ Saúde e Social, melhoria 1: janela de bairros instantânea, com posições locais do IBGE, sem Nominatim (seção 8). **Feita em 05/11/2026, aguardando aprovação do autor.**
-   - Ainda depende de internet: contornos dos municípios (GitHub) e bibliotecas (CDN).
+   - Ainda depende de internet: contornos dos municípios (GitHub), mapa de ruas da janela de bairros (OpenStreetMap) e bibliotecas (CDN).
    - Não aceita `.csv` (a seção 9 pede `.xlsx`, `.xls` e `.csv`).
    - Falta planilha de exemplo **fictícia** em `EXEMPLOS/`.
 3. Definir as cores de status (em dia / atenção / atraso). Hoje estão provisórias (seção 5).

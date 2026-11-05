@@ -90,25 +90,27 @@ function openBairros(city){closeModal();if(!A.data)return;
  const list=[...grupos.values()].sort((a,b)=>b.n-a.n);
  const noMapa=list.filter(p=>p.pos),semPos=list.length-noMapa.length;
  const total=list.reduce((s,p)=>s+p.n,0),vidasNoMapa=noMapa.reduce((s,p)=>s+p.n,0),element=document.createElement('div');element.className='v9-overlay';
- element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(city)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado: um ponto por bairro, pela malha oficial de bairros do IBGE (Censo 2022). Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress"></div><div class="v9-rank">${list.map(p=>`<div${p.pos?'':' class="v9-sem-pos" title="Bairro não reconhecido: as vidas contam na lista, mas não aparecem no mapa"'}><span>${esc(p.bairro)}${p.pos?'':'<small>sem localização no mapa</small>'}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
+ element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>${esc(city)} — CONCENTRAÇÃO POR BAIRRO</strong><small>${fmt(total)} vidas com bairro informado · ${fmt(list.length)} bairros</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Mapa aproximado por bairro, utilizando referências públicas. Não representa endereços individuais.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>BAIRROS COM MAIS VIDAS</strong><div class="v9-progress"></div><div class="v9-rank">${list.map(p=>`<div><span>${esc(p.bairro)}</span><b>${fmt(p.n)}</b></div>`).join('')}</div></aside></div></div>`;
  document.body.appendChild(element);const modal={element,map:null,closed:false};A.modal=modal;
  element.querySelector('.v9-close').onclick=closeModal;element.onclick=e=>{if(e.target===element)closeModal();};
  const progresso=element.querySelector('.v9-progress');
  const center=city==='NITEROI'?[-22.90,-43.10]:[-22.93,-43.35];
- const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true,attributionControl:false,preferCanvas:true}).setView(center,11);modal.map=map;
- /* Fundo no mesmo estilo dos mapas da página: escuro, com o contorno dos municípios
-    (o mesmo GeoJSON já carregado na importação). O mapa de ruas do OpenStreetMap foi
-    tirado em 05/11/2026: o servidor dele bloqueia ("403 Access blocked") páginas
-    abertas direto do arquivo, que não se identificam. */
- map.getContainer().style.background='radial-gradient(ellipse at center,#102444,#08152b)';
- if(A.geo)L.geoJSON({type:'FeatureCollection',features:A.geo.features.filter(f=>METRO.has(cityName(f)))},{interactive:false,style:f=>{const esta=cityName(f)===city;return {color:esta?'#39d8f5':'#2b4363',weight:esta?1.6:.8,fillColor:esta?'#12305a':'#10213d',fillOpacity:esta?.35:.12};}}).addTo(map);
+ const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true}).setView(center,11);modal.map=map;
+ /* Mapa de ruas do OpenStreetMap (escolha do autor: mais elegante que o fundo escuro).
+    ⚠️ O servidor do OpenStreetMap bloqueia ("403 Access blocked") páginas abertas direto
+    do arquivo (file://), que não dizem de qual site vêm; publicado (GitHub Pages) funciona. */
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
  if(!list.length){progresso.textContent='Nenhum bairro informado para este município.';setTimeout(()=>map.invalidateSize(),100);return;}
- /* tudo de uma vez: calor, pontos e enquadramento */
- const max=noMapa.length?noMapa[0].n:1;
- if(noMapa.length)modal.heat=L.heatLayer(noMapa.map(p=>[...p.pos,heatIntensity(p.n,max)]),{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
- for(const p of noMapa)L.circleMarker(p.pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.bairro,p.n,false)).addTo(map);
- progresso.textContent=`${fmt(noMapa.length)} de ${fmt(list.length)} bairros no mapa (${fmt(vidasNoMapa)} de ${fmt(total)} vidas).`+(semPos?` ${fmt(semPos)} sem localização ficam só na lista.`:'');
- setTimeout(()=>{map.invalidateSize();if(noMapa.length>1)map.fitBounds(noMapa.map(p=>p.pos),{padding:[35,35],maxZoom:12});},100);
+ /* mesma frase da versão anterior */
+ progresso.textContent=`${noMapa.length} de ${list.length} bairros localizados. Todos os valores permanecem na lista.`;
+ /* tudo de uma vez, mas só depois que a janela tem o tamanho final: o calor é um
+    canvas do tamanho do mapa, e desenhado antes disso ficava fraco e cortado */
+ setTimeout(()=>{if(modal.closed)return;map.invalidateSize();
+  if(noMapa.length>1)map.fitBounds(noMapa.map(p=>p.pos),{padding:[35,35],maxZoom:12,animate:false});
+  const max=noMapa.length?noMapa[0].n:1;
+  if(noMapa.length)modal.heat=L.heatLayer(noMapa.map(p=>[...p.pos,heatIntensity(p.n,max)]),{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+  for(const p of noMapa)L.circleMarker(p.pos,{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1}).bindTooltip(popup(p.bairro,p.n,false)).addTo(map);
+ },100);
 }
 function setMode(k,mode){A.mode[k]=mode;const suffix=k==='metro'?'Metro':'Estado';for(const m of ['Calor','Bolhas','Ambos']){const b=$('btn'+m+suffix);if(b){const active=m.toLowerCase()===mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}}draw(k);}
 async function importExcel(e){const file=e.target.files?.[0];if(!file)return;const request=++A.request;closeModal();status('Lendo Excel...');try{
@@ -135,7 +137,7 @@ function styles(){if($('v9-styles'))return;const s=document.createElement('style
 .v9-grid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:10px;min-height:0;flex:1;padding:10px}
 #v9-detail-map{min-height:300px;border-radius:8px;overflow:hidden}
 .v9-grid aside{min-height:0;overflow:auto;padding:12px;border-radius:8px;background:#152540}
-.v9-progress{font-size:11px;color:#9cc4e1;margin:10px 0}.v9-rank .v9-sem-pos span{color:#8fa3c0}.v9-rank small{display:block;font-size:10px;color:#ffc56d;margin-top:2px}.v9-rank>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #30405b;padding:8px 0}.v9-rank b{color:#35ddf5}
+.v9-progress{font-size:11px;color:#9cc4e1;margin:10px 0}.v9-rank>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #30405b;padding:8px 0}.v9-rank b{color:#35ddf5}
 @media(max-width:700px){.v9-grid{grid-template-columns:1fr;grid-template-rows:minmax(250px,1fr) 180px}}
 `;document.head.appendChild(s);}
 function init(){styles();document.querySelectorAll('.map-panel-footer').forEach(e=>e.remove());
