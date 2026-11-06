@@ -32,7 +32,7 @@
     {
       nome: "Visitante",
       email: "visitante@nexus.dev",
-      paineis: "Saúde e Social"
+      paineis: ["Saúde e Social"]
     }
   ];
 
