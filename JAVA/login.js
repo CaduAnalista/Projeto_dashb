@@ -163,7 +163,7 @@
     const demo = USUARIOS_AUTORIZADOS[0];
     nome.value = demo.nome;
     email.value = demo.email;
-    if (!painel.value) painel.value = demo.paineis[0];
+    painel.value = "Saúde e Social";
     aviso.textContent = "";
     nexus.reagir("feliz", 1600);
     falar("Acesso de demonstração pronto. É só entrar!");
