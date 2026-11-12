@@ -938,26 +938,75 @@
        Exporta todos os protocolos da tabela (filtros + busca), não só a página.
     ====================================================== */
 
-    function exportarExcel() {
-        if (!window.XLSX || !estado.tabela.length) return;
+    
+      function exportarExcel() {
+          if (!window.XLSX || !estado.tabela.length) return;
+      
+          const cabecalho = [
+              'Protocolo',
+              'CPF',
+              'Nome do Beneficiário',
+              'E-mail',
+              'Setor',
+              'Descrição da ocorrência',
+              'Data de abertura',
+              'Data de previsão',
+              'Status (RN 623)',
+              'Observação de abertura'
+          ];
+      
+          const linhas = estado.tabela.map((r) => [
+              r.protocolo,
+              r.cpf,
+              r.nome || '',
+              r.email,
+              nomeBonito(r.setor),
+              r.ocorrencia,
+              r.abertura || '',
+              r.previsao || '',
+              ROTULO_PRAZO[r.prazo],
+              r.observacao
+          ]);
+      
+          const planilha = XLSX.utils.aoa_to_sheet(
+              [cabecalho, ...linhas],
+              { dateNF: 'dd/mm/yyyy' }
+          );
+      
+          planilha['!cols'] = [
+              { wch: 24 },
+              { wch: 16 },
+              { wch: 38 },
+              { wch: 30 },
+              { wch: 18 },
+              { wch: 40 },
+              { wch: 14 },
+              { wch: 14 },
+              { wch: 16 },
+              { wch: 80 }
+          ];
+      
+          planilha['!autofilter'] = {
+              ref: planilha['!ref']
+          };
+      
+          const livro = XLSX.utils.book_new();
+      
+          XLSX.utils.book_append_sheet(
+              livro,
+              planilha,
+              'Protocolos'
+          );
+      
+          XLSX.writeFile(
+              livro,
+              `protocolos-inteligencia-de-rede-${paraInput(estado.hoje)}.xlsx`,
+              { compression: true }
+          );
+      
+          avisar(`${numeroBR(linhas.length)} protocolos exportados.`);
+      }
 
-        const cabecalho = ['Protocolo', 'CPF', 'E-mail', 'Setor', 'Descrição da ocorrência',
-            'Data de abertura', 'Data de previsão', 'Status (RN 623)', 'Observação de abertura'];
-        const linhas = estado.tabela.map((r) => [
-            r.protocolo, r.cpf, r.email, nomeBonito(r.setor), r.ocorrencia,
-            r.abertura || '', r.previsao || '', ROTULO_PRAZO[r.prazo], r.observacao
-        ]);
-
-        const planilha = XLSX.utils.aoa_to_sheet([cabecalho, ...linhas], { dateNF: 'dd/mm/yyyy' });
-        planilha['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 30 }, { wch: 18 }, { wch: 40 },
-            { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 80 }];
-        planilha['!autofilter'] = { ref: planilha['!ref'] };
-
-        const livro = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(livro, planilha, 'Protocolos');
-        XLSX.writeFile(livro, `protocolos-inteligencia-de-rede-${paraInput(estado.hoje)}.xlsx`, { compression: true });
-        avisar(`${numeroBR(linhas.length)} protocolos exportados.`);
-    }
 
     /* ======================================================
        10. CONTROLES DOS FILTROS
