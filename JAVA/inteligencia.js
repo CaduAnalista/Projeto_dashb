@@ -22,10 +22,11 @@
         protocolo: ['PROTOCOLO ANS', 'PROTOCOLO', 'NUMERO DO PROTOCOLO', 'Nº PROTOCOLO'],
         cpf: ['CPF BENEFICIARIO', 'CPF', 'CPF DO BENEFICIARIO'],
         email: ['EMAIL', 'E-MAIL', 'E MAIL', 'EMAIL DO BENEFICIARIO'],
-        assunto: ['DESCRICAO ASSUNTO', 'ASSUNTO', 'DESCRICAO DO ASSUNTO'],
-        grupo: ['DESCRICAO GRP OCORRENCIA', 'GRUPO DE OCORRENCIA', 'GRUPO OCORRENCIA'],
-        ocorrencia: ['DESCRICAO OCORRENCIA', 'DESCRICAO DA OCORRENCIA', 'OCORRENCIA'],
-        tipo: ['DESCRICAO TIPO OCORRENCIA', 'TIPO DE OCORRENCIA'],
+        assunto: ['DESC ASSUNTO', 'DESCRICAO ASSUNTO', 'ASSUNTO', 'DESCRICAO DO ASSUNTO'],
+        grupo: ['DESC GRP OCORRENCIA', 'DESCRICAO GRP OCORRENCIA', 'GRUPO DE OCORRENCIA', 'GRUPO OCORRENCIA'],
+        ocorrencia: ['DESC OCORRENCIA', 'DESCRICAO OCORRENCIA', 'DESCRICAO DA OCORRENCIA', 'OCORRENCIA'],
+        tipo: ['DESC TIPO OCORRENCIA', 'DESCRICAO TIPO OCORRENCIA', 'TIPO DE OCORRENCIA'],
+
         /* canal de comunicação. Não usar "COMUNICACAO": essa coluna só tem códigos (000005...) */
         canal: ['DESC COMUNICACAO', 'DESCRICAO COMUNICACAO', 'DESCRICAO DA COMUNICACAO', 'CANAL DE COMUNICACAO', 'CANAL'],
         abertura: ['DATA ABERTURA OCORRENCIA', 'DATA ABERTURA', 'DATA DE ABERTURA'],
@@ -39,41 +40,67 @@
     /* Sem estas a tela não tem como funcionar. */
     const CAMPOS_OBRIGATORIOS = ['abertura', 'ocorrencia'];
 
-    function normalizar(valor) {
-        return String(valor ?? '')
-            .normalize('NFD')
-            .replace(/[̀-ͯ]/g, '')
-            .toUpperCase()
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
+    
+   function normalizar(valor) {
+       return String(valor ?? '')
+           .normalize('NFD')
+           .replace(/[\u0300-\u036f]/g, '')
+           .toUpperCase()
+           .replace(/\s+/g, ' ')
+           .trim();
+   }
+
 
     const chaveCabecalho = (valor) => normalizar(valor).replace(/[^A-Z0-9]/g, '');
 
     /* Resolve, uma vez por planilha, qual cabeçalho corresponde a cada campo.
        Os nomes de CAMPOS são tentados na ordem em que aparecem (o primeiro é o preferido),
        e não na ordem das colunas da planilha. */
-    function resolverColunas(cabecalhos) {
-        const chaves = cabecalhos.map((c) => ({ original: c, chave: chaveCabecalho(c) }));
-        const mapa = {};
+    
+      function resolverColunas(cabecalhos) {
+          const chaves = cabecalhos.map((c) => ({
+              original: c,
+              chave: chaveCabecalho(c)
+          }));
+      
+          const mapa = {};
+      
+          for (const [campo, nomes] of Object.entries(CAMPOS)) {
+              const alvos = nomes.map(chaveCabecalho);
+              let achado = null;
+      
+              // Primeiro procura correspondência exata.
+              for (const a of alvos) {
+                  achado = chaves.find((c) => c.chave === a);
+      
+                  if (achado) break;
+              }
+      
+              // Evita confundir códigos com descrições.
+              if (
+                  !achado &&
+                  !['assunto', 'grupo', 'ocorrencia', 'tipo'].includes(campo)
+              ) {
+                  for (const a of alvos) {
+                      achado = chaves.find(
+                          (c) =>
+                              c.chave.length > 4 &&
+                              (
+                                  c.chave.includes(a) ||
+                                  a.includes(c.chave)
+                              )
+                      );
+      
+                      if (achado) break;
+                  }
+              }
+      
+              mapa[campo] = achado ? achado.original : null;
+          }
+      
+          return mapa;
+      }
 
-        for (const [campo, nomes] of Object.entries(CAMPOS)) {
-            const alvos = nomes.map(chaveCabecalho);
-            let achado = null;
-            for (const a of alvos) {
-                achado = chaves.find((c) => c.chave === a);
-                if (achado) break;
-            }
-            if (!achado) {
-                for (const a of alvos) {
-                    achado = chaves.find((c) => c.chave.length > 4 && (c.chave.includes(a) || a.includes(c.chave)));
-                    if (achado) break;
-                }
-            }
-            mapa[campo] = achado ? achado.original : null;
-        }
-        return mapa;
-    }
 
     /* ======================================================
        2. DATAS
