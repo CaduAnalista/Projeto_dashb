@@ -21,6 +21,7 @@
     const CAMPOS = {
         protocolo: ['PROTOCOLO ANS', 'PROTOCOLO', 'NUMERO DO PROTOCOLO', 'Nº PROTOCOLO'],
         cpf: ['CPF BENEFICIARIO', 'CPF', 'CPF DO BENEFICIARIO'],
+        nome: ['NOME BENEFICIARIO', 'NOME DO BENEFICIARIO', 'NOME', 'DESC BENEFICIARIO'],
         email: ['EMAIL', 'E-MAIL', 'E MAIL', 'EMAIL DO BENEFICIARIO'],
         assunto: ['DESC ASSUNTO', 'DESCRICAO ASSUNTO', 'ASSUNTO', 'DESCRICAO DO ASSUNTO'],
         grupo: ['DESC GRP OCORRENCIA', 'DESCRICAO GRP OCORRENCIA', 'GRUPO DE OCORRENCIA', 'GRUPO OCORRENCIA'],
@@ -561,11 +562,13 @@
 
             const protocolo = texto(pegar(linha, 'protocolo'));
             const cpf = formatarCPF(pegar(linha, 'cpf'));
+            const nome = texto(pegar(linha, 'nome'));
             const email = texto(pegar(linha, 'email')).toLowerCase();
 
             registros.push({
                 protocolo,
                 cpf,
+                nome,
                 email,
                 setor,
                 ocorrencia,
@@ -795,6 +798,7 @@
     const VALOR_ORDEM = {
         protocolo: (r) => r.protocolo,
         cpf: (r) => r.cpf,
+        nome: (r) => r.nome,
         email: (r) => r.email,
         setor: (r) => r.setor,
         ocorrencia: (r) => r.ocorrenciaNorm,
@@ -846,6 +850,7 @@
             <tr>
                 ${celula('Protocolo', escapar(r.protocolo) || '<span class="fraco">—</span>', 'mono')}
                 ${celula('CPF', escapar(r.cpf) || '<span class="fraco">—</span>', 'mono')}
+                ${celula('Beneficiário', escapar(r.nome) || '<span class="fraco">—</span>')}
                 ${celula('E-mail', r.email ? `<span title="${escapar(r.email)}">${escapar(r.email)}</span>` : '<span class="fraco">—</span>')}
                 ${celula('Setor', `<span class="etiqueta-setor" title="${escapar(nomeBonito(r.setor))}">${escapar(nomeBonito(r.setor))}</span>`)}
                 ${celula('Ocorrência', r.ocorrencia ? `<span title="${escapar(r.ocorrencia)}">${escapar(nomeBonito(r.ocorrencia))}</span>` : '<span class="fraco">—</span>')}
