@@ -225,15 +225,20 @@ function openRedeEstado(){if(!R.loaded)return;closeModal();
  element.querySelector('.v9-rede-lista').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;const m=markers[b.dataset.i];if(!m){progress.textContent='Esta unidade ainda está sendo localizada…';return;}map.setView(m.getLatLng(),Math.max(map.getZoom(),14));m.openPopup();});
  // Um ponto por bairro + município; unidades do mesmo bairro ficam em volta dele
  const lugares=new Map();units.forEach((u,i)=>{const key=u.cidade+'|'+norm(u.bairro);if(!lugares.has(key))lugares.set(key,{cidade:u.cidade,bairro:norm(u.bairro),itens:[]});lugares.get(key).itens.push(i);});
- const bounds=[];let feitos=0,porBairro=0;
+ // Igual à janela de bairros do mapa 02: mapa de calor por bairro (mais unidades = mais quente) e um ponto por unidade
+ const maxItens=Math.max(1,...[...lugares.values()].map(l=>l.itens.length));
+ const bounds=[],heatPoints=[];let feitos=0,porBairro=0;
  (async()=>{for(const lugar of lugares.values()){if(modal.closed)return;
   let pos=lugar.bairro?await geocode(lugar.bairro,lugar.cidade):null;if(modal.closed)return;
   if(pos)porBairro++;else{const c=A.centers.get(lugar.cidade);pos=c?[c.lat,c.lng]:null;}
   feitos++;
-  if(pos){lugar.itens.forEach((i,j)=>{const u=units[i],ang=j*2.4,raio=j?0.0012*Math.sqrt(j):0,lat=pos[0]+raio*Math.sin(ang),lng=pos[1]+raio*Math.cos(ang);bounds.push([lat,lng]);
-   const html=`<div class="rede-pin-small" style="--pin:${CORES_REDE[u.categoria]}"><b>${SIMBOLOS_REDE[u.categoria]}</b></div>`;
-   markers[i]=L.marker([lat,lng],{icon:L.divIcon({className:'rede-marker-small',html,iconSize:[20,25],iconAnchor:[10,25]}),title:u.nome})
-    .bindTooltip(esc(u.nome),{direction:'top',offset:[0,-23]})
+  if(pos){
+   heatPoints.push([pos[0],pos[1],heatIntensity(lugar.itens.length,maxItens)]);
+   if(modal.heat)map.removeLayer(modal.heat);
+   modal.heat=L.heatLayer(heatPoints,{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+   lugar.itens.forEach((i,j)=>{const u=units[i],ang=j*2.4,raio=j?0.0012*Math.sqrt(j):0,lat=pos[0]+raio*Math.sin(ang),lng=pos[1]+raio*Math.cos(ang);bounds.push([lat,lng]);
+   markers[i]=L.circleMarker([lat,lng],{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1})
+    .bindTooltip(esc(u.nome),{direction:'top'})
     .bindPopup(`<div class="rede-popup"><strong>${esc(u.nome)}</strong><p>${esc([u.bairro,u.cidade].filter(Boolean).join(' — '))}${u.endereco?'<br>'+esc([u.endereco,u.numero].filter(Boolean).join(', ')):''}</p><small>${esc([...u.classes].join(' / '))} · Urgência: ${esc(urgTexto(u))}${u.esps.size?'<br>'+esc([...u.esps].join(', ')):''}</small></div>`,{maxWidth:320})
     .addTo(map);});}
   progress.textContent=`Localizados ${feitos} de ${lugares.size} bairros (${porBairro} pelo bairro)`;
