@@ -1370,3 +1370,84 @@ button:focus-visible,
     min-height: 560px !important;
   }
 }
+
+/* ==========================================================
+   MAPA 01 — REDE CREDENCIADA: filtros, legenda e marcadores
+========================================================== */
+.rede-filtros {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  padding: 0 18px 8px;
+}
+.rede-filtros > label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 110px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.rede-filtros select {
+  width: 100%;
+  height: 28px;
+  padding: 3px 6px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.rede-filtros select:focus-visible,
+.rede-limpar:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.rede-limpar {
+  height: 28px;
+  padding: 0 8px;
+  background: none;
+  border: 0;
+  color: var(--cyan);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rede-legenda {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.rede-legenda span { display: flex; align-items: center; gap: 5px; }
+.rede-legenda i { width: 9px; height: 9px; border-radius: 3px; background: var(--cor); }
+.rede-aviso { flex: 0 0 auto; margin: 0; padding: 0 18px; color: var(--yellow); font-size: 10px; }
+.rede-aviso:empty { display: none; }
+
+#mapaRede .rede-marker-small,
+#v9-detail-map .rede-marker-small { background: none; border: 0; overflow: visible; }
+#mapaRede .rede-pin-small,
+#v9-detail-map .rede-pin-small {
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  background: var(--pin);
+  border: 1px solid #f3f7fc;
+  border-radius: 50% 50% 50% 2px;
+  transform: rotate(-45deg);
+  box-shadow: -2px 3px 5px #0005;
+}
+#mapaRede .rede-pin-small b,
+#v9-detail-map .rede-pin-small b { font: 700 11px Arial, sans-serif; color: #fff; transform: rotate(45deg); line-height: 1; }
+#mapaRede .rede-marker-small:hover { z-index: 1500 !important; }
+#mapaRede .rede-marker-small:hover .rede-pin-small { filter: brightness(1.15); }
+.rede-popup { color: #10223b; font: 12px Arial, sans-serif; }
+.rede-popup p { margin: 6px 0; }
+.rede-popup ul { margin: 0; padding-left: 18px; max-height: 260px; overflow: auto; }
+.rede-popup li { margin: 7px 0; }
+
+@media (max-width: 600px) {
+  .rede-filtros { padding: 0 12px 8px; }
+  .rede-filtros > label { flex: 1 1 45%; }
+}

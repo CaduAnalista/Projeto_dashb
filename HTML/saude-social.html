@@ -46,11 +46,11 @@
         </span>
 
         <h1>
-          Distribuição Geográfica de Beneficiários
+          Distribuição Geográfica da Rede e dos Beneficiários
         </h1>
 
         <p>
-          Visualização territorial das vidas ativas no Rio de Janeiro
+          Rede credenciada e vidas ativas no Estado do Rio de Janeiro
         </p>
 
       </div>
@@ -72,12 +72,19 @@
 
       </div>
 
+      <label class="btn-importar" for="arquivoRede">
+        <i data-lucide="hospital"></i>
+        <span>Importar rede</span>
+      </label>
+
+      <input type="file" id="arquivoRede" accept=".xlsx,.xls,.xlsb" hidden>
+
       <label class="btn-importar" for="arquivoExcel">
 
         <i data-lucide="upload"></i>
 
         <span>
-          Importar Excel
+          Importar beneficiários
         </span>
 
       </label>
@@ -97,6 +104,16 @@
   <!-- INDICADORES RESUMIDOS -->
 
   <section class="summary-strip">
+
+    <div class="summary-item">
+      <span class="summary-label">Unidades da rede</span>
+      <strong class="summary-value" id="totalPrestadores">0</strong>
+    </div>
+
+    <div class="summary-item">
+      <span class="summary-label">Hospitais</span>
+      <strong class="summary-value" id="totalHospitais">0</strong>
+    </div>
 
     <div class="summary-item">
 
@@ -192,7 +209,7 @@
       </h2>
 
       <p>
-        Distribuição territorial de beneficiários por município
+        Mapa 01: rede credenciada por município • Mapa 02: beneficiários por município
       </p>
 
     </div>
@@ -200,7 +217,7 @@
     <div class="maps-heading-right">
 
       <span class="label-note">
-        Visualização geográfica de vidas ativas
+        Cada mapa usa a sua própria planilha
       </span>
 
     </div>
@@ -213,9 +230,9 @@
   <main class="maps-grid maps-grid-large">
 
 
-    <!-- MAPA 01 -->
+    <!-- MAPA 01: REDE CREDENCIADA (só recebe a planilha da rede) -->
 
-    <section class="map-panel map-panel-large">
+    <section class="map-panel map-panel-large map-panel-rede">
 
       <div class="map-panel-header">
 
@@ -226,11 +243,11 @@
           </span>
 
           <h3>
-            Rio de Janeiro e Região Metropolitana
+            Rede credenciada
           </h3>
 
           <p>
-            Distribuição por município • Rio de Janeiro e Niterói em destaque
+            Prestadores por município • Estado do Rio de Janeiro
           </p>
 
         </div>
@@ -238,27 +255,13 @@
         <div class="map-header-meta">
 
           <div class="map-meta-box">
-
-            <span>
-              Total de vidas
-            </span>
-
-            <strong id="totalMapaMetropolitano">
-              0
-            </strong>
-
+            <span>Unidades</span>
+            <strong id="totalMapaRede">0</strong>
           </div>
 
           <div class="map-meta-box">
-
-            <span>
-              Bairros identificados
-            </span>
-
-            <strong id="totalBairrosMetro">
-              0
-            </strong>
-
+            <span>Municípios</span>
+            <strong id="municipiosMapaRede">0</strong>
           </div>
 
         </div>
@@ -272,41 +275,24 @@
 
         <div class="map-view-options">
 
-          <button
-            type="button"
-            class="map-mode active"
-            id="btnCalorMetro">
-            Calor
-          </button>
+          <button type="button" class="map-mode" id="btnCalorRede">Calor</button>
 
-          <button
-            type="button"
-            class="map-mode"
-            id="btnBolhasMetro">
-            Bolhas
-          </button>
+          <button type="button" class="map-mode" id="btnMarcadoresRede">Marcadores</button>
 
-          <button
-            type="button"
-            class="map-mode"
-            id="btnAmbosMetro">
-            Ambos
-          </button>
+          <button type="button" class="map-mode active" id="btnAmbosRede">Ambos</button>
 
         </div>
 
         <div class="map-controls-right">
 
-          <span class="map-label-info">
-            Rio de Janeiro e Niterói destacados
-          </span>
+          <span class="map-label-info" id="modoRede"></span>
 
           <button
             type="button"
             class="map-reset"
-            id="btnResetMetro"
+            id="btnResetRede"
             title="Restaurar mapa"
-            aria-label="Restaurar mapa metropolitano">
+            aria-label="Restaurar mapa da rede">
 
             <i data-lucide="maximize"></i>
 
@@ -317,25 +303,50 @@
       </div>
 
 
+      <!-- FILTROS MAPA 01 -->
+
+      <div class="rede-filtros" aria-label="Filtros da rede">
+        <label>Urgência
+          <select id="filtroUrgencia">
+            <option value="">Todas</option>
+            <option value="SIM">Sim</option>
+            <option value="NAO">Não</option>
+            <option value="NAO INFORMADO">Não informada</option>
+          </select>
+        </label>
+        <label>Tipo<select id="filtroClasse"><option value="">Todos</option></select></label>
+        <label>Especialidade<select id="filtroEspecialidade"><option value="">Todas</option></select></label>
+        <label>Município<select id="filtroMunicipio"><option value="">Todos</option></select></label>
+        <button type="button" id="limparFiltros" class="rede-limpar">Limpar</button>
+        <div class="rede-legenda" aria-label="Legenda dos marcadores">
+          <span><i style="--cor:#168bff"></i>Hospitais</span>
+          <span><i style="--cor:#33c95a"></i>Clínicas</span>
+          <span><i style="--cor:#ad64ed"></i>Laboratórios</span>
+          <span><i style="--cor:#ffae38"></i>Outros</span>
+        </div>
+      </div>
+      <p class="rede-aviso" id="avisoRede" role="status"></p>
+
+
       <!-- ÁREA DO MAPA 01 -->
 
       <div
         class="map-canvas map-canvas-large"
-        id="mapaMetropolitano"
-        aria-label="Mapa da Região Metropolitana">
+        id="mapaRede"
+        aria-label="Mapa da rede credenciada no Estado do Rio de Janeiro">
 
         <div
           class="map-placeholder"
-          id="placeholderMetro">
+          id="placeholderRede">
 
-          <i data-lucide="map-pinned"></i>
+          <i data-lucide="hospital"></i>
 
           <strong>
-            Mapa da Região Metropolitana
+            Mapa da rede credenciada
           </strong>
 
           <span>
-            Importe a planilha para visualizar os dados geográficos.
+            Clique em "Importar rede" para ver os prestadores e o mapa de calor.
           </span>
 
         </div>
@@ -498,7 +509,7 @@
           </strong>
 
           <span>
-            Importe a planilha para visualizar os dados geográficos.
+            Clique em "Importar beneficiários" para ver as vidas por município.
           </span>
 
         </div>
