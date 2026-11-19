@@ -243,11 +243,11 @@
           </span>
 
           <h3>
-            Rede credenciada
+            Rede credenciada × beneficiários
           </h3>
 
           <p>
-            Prestadores por município • Estado do Rio de Janeiro
+            Onde está a rede e onde estão as vidas • Estado do Rio de Janeiro
           </p>
 
         </div>
@@ -262,6 +262,11 @@
           <div class="map-meta-box">
             <span>Municípios</span>
             <strong id="municipiosMapaRede">0</strong>
+          </div>
+
+          <div class="map-meta-box">
+            <span>Vidas</span>
+            <strong id="vidasMapaRede">0</strong>
           </div>
 
         </div>
@@ -280,6 +285,19 @@
           <button type="button" class="map-mode" id="btnMarcadoresRede">Marcadores</button>
 
           <button type="button" class="map-mode active" id="btnAmbosRede">Ambos</button>
+
+        </div>
+
+        <!-- CAMADAS DO MAPA 01: liga/desliga rede e beneficiários (comparação) -->
+        <div class="map-view-options camadas-mapa1" aria-label="Camadas do mapa 01">
+
+          <button type="button" class="map-camada active" id="camadaRede" aria-pressed="true">
+            <i style="--cor:#00e5ff"></i>Rede
+          </button>
+
+          <button type="button" class="map-camada active" id="camadaBenef" aria-pressed="true">
+            <i style="--cor:#ff7a1f"></i>Beneficiários
+          </button>
 
         </div>
 
@@ -346,7 +364,7 @@
           </strong>
 
           <span>
-            Clique em "Importar rede" para ver os prestadores e o mapa de calor.
+            Clique em "Importar rede" e/ou "Importar beneficiários". Com as duas planilhas, o mapa compara onde estão as vidas (laranja) e a rede (ciano).
           </span>
 
         </div>

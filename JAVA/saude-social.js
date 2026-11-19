@@ -10,7 +10,7 @@ const fmt = n => Number(n || 0).toLocaleString('pt-BR');
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const METRO = new Set('RIO DE JANEIRO|NITEROI|SAO GONCALO|DUQUE DE CAXIAS|NOVA IGUACU|SAO JOAO DE MERITI|BELFORD ROXO|NILOPOLIS|MESQUITA|QUEIMADOS|JAPERI|SEROPEDICA|ITAGUAI|MAGE|GUAPIMIRIM|ITABORAI|TANGUA|MARICA|CACHOEIRAS DE MACACU|RIO BONITO|PARACAMBI|PETROPOLIS'.split('|'));
 const GEO_URL = 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-33-mun.json';
-const A = {data:null,geo:null,centers:null,maps:{},boundaries:{},heats:{},bubbles:{},mode:{rede:'ambos',estado:'calor'},modal:null,cache:new Map(),queue:Promise.resolve(),request:0};
+const A = {data:null,geo:null,centers:null,maps:{},boundaries:{},heats:{},heatsB:{},bubbles:{},mode:{rede:'ambos',estado:'calor'},camadas:{rede:true,benef:true},controles:{},modal:null,cache:new Map(),queue:Promise.resolve(),request:0};
 const put=(id,v)=>{if($(id))$(id).textContent=v;};
 function status(msg,ok=false){put('statusBase',msg);const dot=$('statusDot');if(dot){dot.classList.toggle('ativo',ok);dot.classList.toggle('erro',!ok&&msg.startsWith('Erro'));}}
 function script(url,test){if(test())return Promise.resolve();return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=url;s.onload=()=>test()?resolve():reject(Error('Falha na biblioteca'));s.onerror=()=>reject(Error('Não foi possível carregar '+url));document.head.appendChild(s);});}
@@ -23,6 +23,10 @@ async function libraries(){
 const ehRJ = uf => ['RJ','RIO DE JANEIRO'].includes(uf);
 function heatIntensity(n,max){if(n<=0)return 0;return Math.max(.12,Math.pow(n/max,.42));}
 function heatGradient(){return {0:'#1946c8',.15:'#1677ed',.30:'#00c9f5',.47:'#25e68e',.60:'#d9f53a',.72:'#ffe132',.84:'#ff8b20',.94:'#f04425',1:'#f20d22'};}
+/* Comparação no mapa 01: cada camada tem só a sua família de cor, para não se confundirem.
+   Beneficiários = quentes (amarelo → laranja → vermelho); rede = frias (azul → ciano → branco). */
+const GRAD_BENEF={0:'#ffe08a',.35:'#ffb020',.65:'#ff6a1a',.85:'#ff3b2f',1:'#e8003d'};
+const GRAD_REDE={0:'#1238b8',.35:'#1f6bff',.65:'#14b8ff',.85:'#00e5ff',1:'#e6fdff'};
 function cityName(f){const p=f.properties||{};for(const k of ['name','nome','NM_MUN','NM_MUNICIP','municipio','MUNICIPIO','NOME'])if(p[k])return norm(p[k]);return '';}
 
 /* ---------- Mapas (comuns aos dois) ---------- */
@@ -32,11 +36,18 @@ function initMaps(){if(A.maps.rede)return;for(const [k,id] of [['rede','mapaRede
  map.createPane('v9heat');map.getPane('v9heat').style.zIndex='350';map.getPane('v9heat').style.pointerEvents='none';
  map.createPane('v9borders');map.getPane('v9borders').style.zIndex='410';
  A.maps[k]=map;
- if(k==='rede')map.on('zoomend',drawProviders);
+ if(k==='rede'){
+  map.createPane('v9heatB');map.getPane('v9heatB').style.zIndex='345';map.getPane('v9heatB').style.pointerEvents='none';
+  map.on('zoomend',drawProviders);
+  A.controles.legenda=controle('bottomleft','v9-comp-legenda');
+  A.controles.expandir=controle('topright','v9-expandir');
+ }
  }}
+/* Caixinha fixa sobre o mapa (legenda e ranking "onde expandir") */
+function controle(posicao,classe){const c=L.control({position:posicao});c.onAdd=()=>{const d=L.DomUtil.create('div',classe);L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);d.hidden=true;return d;};c.addTo(A.maps.rede);return c.getContainer();}
 async function ensureMaps(){initMaps();if(!A.geo){const res=await fetch(GEO_URL);if(!res.ok)throw Error('Não foi possível carregar os municípios');const geo=await res.json();if(!Array.isArray(geo.features))throw Error('Malha municipal inválida');A.geo=geo;}
  if(!A.centers){A.centers=new Map();for(const f of A.geo.features)A.centers.set(cityName(f),L.geoJSON(f).getBounds().getCenter());}}
-function clear(k){for(const dict of [A.boundaries,A.heats,A.bubbles])if(dict[k]){A.maps[k].removeLayer(dict[k]);dict[k]=null;}}
+function clear(k){for(const dict of [A.boundaries,A.heats,A.heatsB,A.bubbles])if(dict[k]){A.maps[k].removeLayer(dict[k]);dict[k]=null;}}
 function draw(k,fit=false){if(k==='rede')drawRede(fit);else drawEstado(fit);}
 function setMode(k,mode){A.mode[k]=mode;const suffix=k==='rede'?'Rede':'Estado';for(const m of ['Calor','Bolhas','Marcadores','Ambos']){const b=$('btn'+m+suffix);if(b){const active=m.toLowerCase()===mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}}draw(k);}
 
@@ -117,7 +128,7 @@ function janelaBairros(titulo,list,center,zoom){closeModal();
 async function importExcel(e){const file=e.target.files?.[0];if(!file)return;const request=++A.request;closeModal();status('Lendo beneficiários...');try{
  await libraries();const book=XLSX.read(await file.arrayBuffer(),{type:'array'}),rows=readExcel(book);if(!rows.length)throw Error('Planilha sem registros');if(request!==A.request)return;
  A.data=aggregate(rows);indicators(A.data);put('nomeArquivo',file.name);put('ultimaAtualizacao',new Date().toLocaleString('pt-BR'));status('Carregando mapa dos beneficiários...');
- await ensureMaps();if(request!==A.request)return;drawEstado(true);status('Beneficiários carregados no mapa 02',true);
+ await ensureMaps();if(request!==A.request)return;drawEstado(true);put('vidasMapaRede',fmt(A.data.rj));drawRede(!R.loaded);status(R.loaded?'Beneficiários no mapa 02 e comparados com a rede no mapa 01':'Beneficiários carregados (mapas 01 e 02)',true);
  }catch(err){console.error(err);status('Erro: '+err.message);}finally{e.target.value='';}}
 
 /* ---------- Mapa 01: rede credenciada ---------- */
@@ -181,8 +192,8 @@ function uniqueUnits(rows){
  }
  return [...units.values()].map(u=>({...u,categoria:['Hospitais','Laboratórios','Clínicas','Outros'].find(c=>u.categorias.has(c))}));
 }
-function matchedRows(){
- const classe=$('filtroClasse').value,esp=$('filtroEspecialidade').value,cidade=$('filtroMunicipio').value,urg=$('filtroUrgencia').value;
+function matchedRows(ignorarCidade=false){
+ const classe=$('filtroClasse').value,esp=$('filtroEspecialidade').value,cidade=ignorarCidade?'':$('filtroMunicipio').value,urg=$('filtroUrgencia').value;
  return R.rows.filter(r=>(!urg||r.urgencia===urg)&&(!classe||r.classe===classe)&&(!esp||r.especialidades.includes(esp))&&(!cidade||r.cidade===cidade));
 }
 function fillFilters(){
@@ -200,10 +211,34 @@ function renderRede(fit=false){
  put('municipiosMapaRede',fmt(new Set(units.map(u=>u.cidade)).size));
  drawRede(fit);
 }
-function tipRede(name,list){
+function tipRede(name,list,vidas){
  const porCat=['Hospitais','Clínicas','Laboratórios','Outros'].map(c=>[c,list.filter(u=>u.categoria===c).length]).filter(([,n])=>n);
  const urg=list.filter(u=>u.urgencias.has('SIM')).length;
- return `<div class="v9-tip"><strong>${esc(name)}</strong><span>${fmt(list.length)} ${list.length===1?'unidade':'unidades'} da rede</span>${list.length?`<small>${porCat.map(([c,n])=>`${esc(c)}: ${fmt(n)}`).join(' · ')}${urg?` · Urgência: ${fmt(urg)}`:''}</small>`:''}${abreEstado(name)?'<small>Clique para ver a rede do estado no mapa</small>':''}</div>`;
+ let html=`<div class="v9-tip"><strong>${esc(name)}</strong>`;
+ if(R.loaded)html+=`<span class="tip-rede">${fmt(list.length)} ${list.length===1?'unidade':'unidades'} da rede</span>${list.length?`<small>${porCat.map(([c,n])=>`${esc(c)}: ${fmt(n)}`).join(' · ')}${urg?` · Urgência: ${fmt(urg)}`:''}</small>`:''}`;
+ if(A.data)html+=`<span class="tip-benef">${fmt(vidas)} vidas</span>`;
+ if(R.loaded&&A.data&&vidas)html+=`<small class="tip-razao">${list.length?`${fmt(Math.round(vidas/list.length))} vidas por unidade`:'Vidas sem nenhuma unidade da rede no município'}</small>`;
+ if(abreEstado(name))html+=`<small>${R.loaded?'Clique para ver a rede do estado no mapa':'Clique para explorar os bairros do estado'}</small>`;
+ return html+'</div>';
+}
+/* Ranking "onde expandir": municípios com mais vidas por unidade da rede (filtros da rede valem, menos o de município).
+   Pontuação = vidas ÷ (unidades + 1): sem rede pesa mais, mas uma cidade com 3 vidas não passa na frente de uma com milhares. */
+function atualizarExpansao(){
+ const box=A.controles.expandir;if(!box)return;
+ if(!R.loaded||!A.data){box.hidden=true;return;}
+ const unidades=new Map();for(const u of uniqueUnits(matchedRows(true)))unidades.set(u.cidade,(unidades.get(u.cidade)||0)+1);
+ const lista=[...A.data.cities].map(([cidade,vidas])=>({cidade,vidas,n:unidades.get(cidade)||0})).filter(c=>A.centers.has(c.cidade)).sort((a,b)=>b.vidas/(b.n+1)-a.vidas/(a.n+1)).slice(0,10);
+ const aberto=!box.classList.contains('fechado');
+ box.innerHTML=`<button type="button" class="v9-exp-titulo" aria-expanded="${aberto}">Onde expandir a rede <span>${aberto?'▾':'▸'}</span></button><div class="v9-exp-corpo"><small>Mais vidas por unidade (filtros da rede aplicados)</small><ol>${lista.map(c=>`<li><button type="button" data-cidade="${esc(c.cidade)}"><span>${esc(c.cidade)}</span><b>${fmt(c.vidas)} vidas</b><em class="${c.n?'':'sem'}">${c.n?`${fmt(c.n)} ${c.n===1?'unid.':'unids.'} · ${fmt(Math.round(c.vidas/c.n))}/unid.`:'sem rede'}</em></button></li>`).join('')}</ol></div>`;
+ box.hidden=false;box.style.setProperty('--altura-exp',Math.round(A.maps.rede.getSize().y*.55)+'px');
+ box.querySelector('.v9-exp-titulo').onclick=()=>{box.classList.toggle('fechado');atualizarExpansao();};
+ box.querySelectorAll('button[data-cidade]').forEach(b=>b.onclick=()=>{const f=A.geo.features.find(x=>cityName(x)===b.dataset.cidade);if(f)A.maps.rede.fitBounds(L.geoJSON(f).getBounds(),{padding:[40,40],maxZoom:11});});
+}
+function atualizarLegenda(verRede,verBenef){
+ const box=A.controles.legenda;if(!box)return;
+ if(!(verRede&&verBenef)){box.hidden=true;return;}
+ box.innerHTML=`<strong>Comparação</strong><div><i style="background:linear-gradient(90deg,#ffe08a,#ffb020,#ff6a1a,#e8003d)"></i>Beneficiários (vidas)</div><div><i style="background:linear-gradient(90deg,#1238b8,#1f6bff,#00e5ff,#e6fdff)"></i>Rede credenciada</div><small>Laranja sem ciano por perto = vidas longe da rede</small>`;
+ box.hidden=false;
 }
 const CORES_REDE={'Hospitais':'#168bff','Clínicas':'#33c95a','Laboratórios':'#ad64ed','Outros':'#ffae38'};
 const SIMBOLOS_REDE={'Hospitais':'H','Clínicas':'C','Laboratórios':'L','Outros':'O'};
@@ -248,24 +283,36 @@ function openRedeEstado(){if(!R.loaded)return;closeModal();
  progress.textContent=`${lugares.size} locais processados: ${porBairro} pelo bairro, ${lugares.size-porBairro} pelo centro do município. Clique numa unidade para ir até ela.`;
  })();
 }
-function drawRede(fit=false){const k='rede',map=A.maps[k];if(!map||!A.geo||!R.loaded)return;clear(k);
- const porCidade=new Map();for(const u of R.filtered){if(!porCidade.has(u.cidade))porCidade.set(u.cidade,[]);porCidade.get(u.cidade).push(u);}
- const max=Math.max(1,...[...porCidade.values()].map(l=>l.length));
- const points=[];
- A.boundaries[k]=L.geoJSON(A.geo,{pane:'v9borders',style:f=>{const n=(porCidade.get(cityName(f))||[]).length;return {color:n?'#44647c':'#283d57',weight:n?.95:.6,fillColor:'#10213d',fillOpacity:.035,interactive:true};},onEachFeature:(f,layer)=>{
-  const name=cityName(f),list=porCidade.get(name)||[];
-  layer.bindTooltip(tipRede(name,list),{sticky:true,direction:'top',opacity:.98,className:'v9-tooltip'});
+/* Mapa 01: rede (calor frio + marcadores) e, se importados, beneficiários (calor quente) por baixo.
+   Só uma camada visível = gradiente original; as duas juntas = cada uma com a sua cor. */
+function drawRede(fit=false){const k='rede',map=A.maps[k],d=A.data;if(!map||!A.geo||(!R.loaded&&!d))return;clear(k);
+ const verRede=R.loaded&&A.camadas.rede,verBenef=!!d&&A.camadas.benef,comparar=verRede&&verBenef;
+ const porCidade=new Map();if(R.loaded)for(const u of R.filtered){if(!porCidade.has(u.cidade))porCidade.set(u.cidade,[]);porCidade.get(u.cidade).push(u);}
+ const vidasDe=name=>d?.cities.get(name)||0;
+ const max=Math.max(1,...[...porCidade.values()].map(l=>l.length)),maxV=Math.max(1,...(d?[...d.cities.values()]:[1]));
+ const points=[],pointsV=[];
+ A.boundaries[k]=L.geoJSON(A.geo,{pane:'v9borders',style:f=>{const name=cityName(f),n=(porCidade.get(name)||[]).length,v=vidasDe(name),ativo=(verRede&&n)||(verBenef&&v);return {color:ativo?'#44647c':'#283d57',weight:ativo?.95:.6,fillColor:'#10213d',fillOpacity:.035,interactive:true};},onEachFeature:(f,layer)=>{
+  const name=cityName(f),list=porCidade.get(name)||[],v=vidasDe(name);
+  layer.bindTooltip(tipRede(name,list,v),{sticky:true,direction:'top',opacity:.98,className:'v9-tooltip'});
   if(abreEstado(name)){
-   layer.on('click',openRedeEstado);
+   layer.on('click',()=>R.loaded?openRedeEstado():openBairrosEstado());
    layer.on('mouseover',()=>layer.setStyle({weight:2.5,color:'#39d8f5'}));
    layer.on('mouseout',()=>A.boundaries[k]?.resetStyle(layer));
   }
-  if(list.length)points.push({n:list.length,center:A.centers.get(name)||layer.getBounds().getCenter()});
+  const center=A.centers.get(name)||layer.getBounds().getCenter();
+  if(list.length)points.push({n:list.length,center});
+  if(v)pointsV.push({n:v,center});
  }}).addTo(map);
- if(A.mode[k]!=='marcadores'&&points.length){
-  A.heats[k]=L.heatLayer(points.map(p=>[p.center.lat,p.center.lng,heatIntensity(p.n,max)]),{pane:'v9heat',radius:34,blur:17,max:.68,maxZoom:12,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+ // Beneficiários: mancha larga e suave por baixo (pane 345)
+ if(verBenef&&pointsV.length){
+  A.heatsB[k]=L.heatLayer(pointsV.map(p=>[p.center.lat,p.center.lng,heatIntensity(p.n,maxV)]),comparar?{pane:'v9heatB',radius:38,blur:22,max:.6,maxZoom:12,minOpacity:.55,gradient:GRAD_BENEF}:{pane:'v9heatB',radius:34,blur:17,max:.68,maxZoom:12,minOpacity:.40,gradient:heatGradient()}).addTo(map);
  }
- const semMunicipio=R.filtered.filter(u=>!A.centers.has(u.cidade));
+ // Rede: ponto mais concentrado por cima (pane 350)
+ if(verRede&&A.mode[k]!=='marcadores'&&points.length){
+  A.heats[k]=L.heatLayer(points.map(p=>[p.center.lat,p.center.lng,heatIntensity(p.n,max)]),comparar?{pane:'v9heat',radius:17,blur:10,max:.6,maxZoom:12,minOpacity:.6,gradient:GRAD_REDE}:{pane:'v9heat',radius:34,blur:17,max:.68,maxZoom:12,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+ }
+ atualizarLegenda(verRede,verBenef);atualizarExpansao();
+ const semMunicipio=R.loaded?R.filtered.filter(u=>!A.centers.has(u.cidade)):[];
  put('avisoRede',semMunicipio.length?`${fmt(semMunicipio.length)} sem município reconhecido no mapa: ${[...new Set(semMunicipio.map(u=>u.cidade||'(vazio)'))].join(', ')}`:'');
  if(fit){
   const cidade=$('filtroMunicipio').value,feat=cidade&&A.geo.features.find(f=>cityName(f)===cidade);
@@ -280,7 +327,7 @@ function drawRede(fit=false){const k='rede',map=A.maps[k];if(!map||!A.geo||!R.lo
 function drawProviders(){
  const map=A.maps.rede;if(!map)return;
  if(R.layer){map.removeLayer(R.layer);R.layer=null;}
- if(!R.loaded||!A.geo||A.mode.rede==='calor'){put('modoRede','');return;}
+ if(!R.loaded||!A.geo||A.mode.rede==='calor'||!A.camadas.rede){put('modoRede','');return;}
  R.layer=L.layerGroup().addTo(map);
  const zoom=map.getZoom(),cell=zoom<=8?180:zoom<=9?110:64;
  const buckets=new Map();
@@ -335,6 +382,21 @@ function styles(){if($('v9-styles'))return;const s=document.createElement('style
 .v9-rede-lista button:hover{background:#1b3050}.v9-rede-lista button:focus-visible{outline:2px solid #35ddf5;outline-offset:-2px}
 .v9-rede-lista i{flex:0 0 18px;height:18px;border-radius:50%;background:var(--pin);display:grid;place-items:center;font:700 10px Arial,sans-serif;font-style:normal}
 .v9-rede-lista small{display:block;color:#a9c2dc;margin-top:3px;font-size:11px}
+.v9-tip .tip-rede{color:#33e2fa}.v9-tip .tip-benef{color:#ff9a3c}.v9-tip .tip-razao{color:#fff;font-weight:700}
+.map-camada{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:5px 11px;border:0;border-radius:6px;background:transparent;color:#7f93ad;font:600 11px Arial,sans-serif;cursor:pointer;opacity:.55}
+.map-camada i{width:10px;height:10px;border-radius:50%;background:var(--cor);box-shadow:0 0 6px var(--cor)}
+.map-camada.active{opacity:1;color:#fff;background:#1b3050}.map-camada:hover{background:#1b3050}
+.v9-comp-legenda,.v9-expandir{background:#101c34ee;border:1px solid #345170;border-radius:8px;color:#fff;font:11px Arial,sans-serif;box-shadow:0 5px 15px #0008}
+.v9-comp-legenda{padding:9px 11px;display:flex;flex-direction:column;gap:6px;max-width:220px}
+.v9-comp-legenda div{display:flex;align-items:center;gap:8px}.v9-comp-legenda i{flex:0 0 46px;height:9px;border-radius:5px}.v9-comp-legenda small{color:#a9c2dc}
+.v9-expandir{width:215px;max-height:var(--altura-exp,300px);overflow:auto}
+.v9-exp-titulo{display:flex;justify-content:space-between;width:100%;background:none;border:0;color:#fff;font:700 12px Arial,sans-serif;padding:9px 11px;cursor:pointer}
+.v9-expandir.fechado .v9-exp-corpo{display:none}
+.v9-exp-corpo{padding:0 11px 9px}.v9-exp-corpo>small{color:#a9c2dc}
+.v9-exp-corpo ol{margin:6px 0 0;padding:0 0 0 18px}.v9-exp-corpo li{border-bottom:1px solid #30405b}
+.v9-exp-corpo li button{display:grid;grid-template-columns:1fr auto;gap:2px 8px;width:100%;background:none;border:0;color:#fff;text-align:left;padding:6px 0;cursor:pointer;font:11px Arial,sans-serif}
+.v9-exp-corpo li button:hover span{color:#33e2fa}.v9-exp-corpo b{color:#ff9a3c}.v9-exp-corpo em{grid-column:1/-1;font-style:normal;color:#8fd8ea}.v9-exp-corpo em.sem{color:#ff5c7a;font-weight:700}
+@media(max-width:700px){.v9-expandir{width:200px}.v9-comp-legenda{max-width:180px}}
 @media(max-width:700px){.v9-grid{grid-template-columns:1fr;grid-template-rows:minmax(250px,1fr) 180px}}
 `;document.head.appendChild(s);}
 function init(){styles();document.querySelectorAll('.map-panel-footer').forEach(e=>e.remove());
@@ -343,6 +405,7 @@ function init(){styles();document.querySelectorAll('.map-panel-footer').forEach(
  for(const k of ['rede','estado']){const suffix=k==='rede'?'Rede':'Estado';for(const m of ['Calor','Bolhas','Marcadores','Ambos'])$('btn'+m+suffix)?.addEventListener('click',()=>setMode(k,m.toLowerCase()));$('btnReset'+suffix)?.addEventListener('click',()=>draw(k,true));}
  for(const id of ['filtroUrgencia','filtroClasse','filtroEspecialidade'])$(id)?.addEventListener('change',()=>renderRede());
  $('filtroMunicipio')?.addEventListener('change',()=>renderRede(true));
+ for(const [id,camada] of [['camadaRede','rede'],['camadaBenef','benef']])$(id)?.addEventListener('click',e=>{A.camadas[camada]=!A.camadas[camada];e.currentTarget.classList.toggle('active',A.camadas[camada]);e.currentTarget.setAttribute('aria-pressed',String(A.camadas[camada]));drawRede();});
  $('limparFiltros')?.addEventListener('click',()=>{for(const id of ['filtroUrgencia','filtroClasse','filtroEspecialidade','filtroMunicipio'])$(id).value='';renderRede(true);});
  window.addEventListener('resize',()=>{for(const m of Object.values(A.maps))m?.invalidateSize({pan:false});});
  status('Aguardando importação');}
