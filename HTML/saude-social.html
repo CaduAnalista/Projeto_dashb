@@ -234,49 +234,14 @@
 
     <section class="map-panel map-panel-large map-panel-rede">
 
-      <div class="map-panel-header">
+      <!-- BARRA COMPACTA DO MAPA 01: título, modos, camadas, filtros e números numa linha só -->
 
-        <div class="map-panel-title">
+      <div class="rede-barra">
 
-          <span class="map-number">
-            MAPA 01
-          </span>
-
-          <h3>
-            Rede credenciada × beneficiários
-          </h3>
-
-          <p>
-            Onde está a rede e onde estão as vidas • Estado do Rio de Janeiro
-          </p>
-
+        <div class="rede-titulo">
+          <span class="map-number">MAPA 01</span>
+          <h3>Rede credenciada × beneficiários</h3>
         </div>
-
-        <div class="map-header-meta">
-
-          <div class="map-meta-box">
-            <span>Unidades</span>
-            <strong id="totalMapaRede">0</strong>
-          </div>
-
-          <div class="map-meta-box">
-            <span>Municípios</span>
-            <strong id="municipiosMapaRede">0</strong>
-          </div>
-
-          <div class="map-meta-box">
-            <span>Vidas</span>
-            <strong id="vidasMapaRede">0</strong>
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- CONTROLES MAPA 01 -->
-
-      <div class="map-controls map-controls-clean">
 
         <div class="map-view-options">
 
@@ -301,29 +266,13 @@
 
         </div>
 
-        <div class="map-controls-right">
-
-          <span class="map-label-info" id="modoRede"></span>
-
-          <button
-            type="button"
-            class="map-reset"
-            id="btnResetRede"
-            title="Restaurar mapa"
-            aria-label="Restaurar mapa da rede">
-
-            <i data-lucide="maximize"></i>
-
+        <!-- FILTROS MAPA 01: um botão só, que abre o painel com os filtros -->
+        <div class="rede-filtro-wrap">
+          <button type="button" class="rede-btn-filtros" id="btnFiltros" aria-expanded="false" aria-controls="painelFiltros">
+            <i data-lucide="sliders-horizontal"></i>Filtros<span class="rede-cont" id="contFiltros" hidden>0</span>
           </button>
 
-        </div>
-
-      </div>
-
-
-      <!-- FILTROS MAPA 01 -->
-
-      <div class="rede-filtros" aria-label="Filtros da rede">
+      <div class="rede-filtros" id="painelFiltros" aria-label="Filtros da rede" hidden>
         <label>Urgência
           <select id="filtroUrgencia">
             <option value="">Todas</option>
@@ -342,6 +291,26 @@
           <span><i style="--cor:#ad64ed"></i>Laboratórios</span>
           <span><i style="--cor:#ffae38"></i>Outros</span>
         </div>
+      </div>
+        </div>
+
+        <div class="rede-meta">
+          <span><b id="totalMapaRede">0</b> unidades</span>
+          <span><b id="municipiosMapaRede">0</b> municípios</span>
+          <span><b id="vidasMapaRede" class="rede-meta-vidas">0</b> vidas</span>
+        </div>
+
+        <span class="map-label-info" id="modoRede"></span>
+
+        <button
+          type="button"
+          class="map-reset"
+          id="btnResetRede"
+          title="Restaurar mapa"
+          aria-label="Restaurar mapa da rede">
+          <i data-lucide="maximize"></i>
+        </button>
+
       </div>
       <p class="rede-aviso" id="avisoRede" role="status"></p>
 

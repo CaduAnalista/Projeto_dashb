@@ -26,6 +26,8 @@ function heatGradient(){return {0:'#1946c8',.15:'#1677ed',.30:'#00c9f5',.47:'#25
 /* Comparação no mapa 01: cada camada tem só a sua família de cor, para não se confundirem.
    Beneficiários = quentes (amarelo → laranja → vermelho); rede = frias (azul → ciano → branco). */
 const GRAD_BENEF={0:'#ffe08a',.35:'#ffb020',.65:'#ff6a1a',.85:'#ff3b2f',1:'#e8003d'};
+/* Na janela (mapa de ruas claro) o amarelo some: começa já no laranja */
+const GRAD_BENEF_RUAS={0:'#ff9500',.4:'#ff6a00',.7:'#ff3300',1:'#c8002a'};
 const GRAD_REDE={0:'#1238b8',.35:'#1f6bff',.65:'#14b8ff',.85:'#00e5ff',1:'#e6fdff'};
 function cityName(f){const p=f.properties||{};for(const k of ['name','nome','NM_MUN','NM_MUNICIP','municipio','MUNICIPIO','NOME'])if(p[k])return norm(p[k]);return '';}
 
@@ -39,7 +41,7 @@ function initMaps(){if(A.maps.rede)return;for(const [k,id] of [['rede','mapaRede
  if(k==='rede'){
   map.createPane('v9heatB');map.getPane('v9heatB').style.zIndex='345';map.getPane('v9heatB').style.pointerEvents='none';
   map.on('zoomend',drawProviders);
-  A.controles.legenda=controle('bottomleft','v9-comp-legenda');
+  A.controles.legenda=controle('bottomleft','v9-comp-legenda compacta');
   A.controles.expandir=controle('topright','v9-expandir');
  }
  }}
@@ -209,6 +211,8 @@ function renderRede(fit=false){
  put('totalHospitais',fmt(units.filter(u=>u.categoria==='Hospitais').length));
  put('totalMapaRede',fmt(units.length));
  put('municipiosMapaRede',fmt(new Set(units.map(u=>u.cidade)).size));
+ const ativos=['filtroUrgencia','filtroClasse','filtroEspecialidade','filtroMunicipio'].filter(id=>$(id)?.value).length,cont=$('contFiltros');
+ if(cont){cont.textContent=ativos;cont.hidden=!ativos;}
  drawRede(fit);
 }
 function tipRede(name,list,vidas){
@@ -227,9 +231,9 @@ function atualizarExpansao(){
  const box=A.controles.expandir;if(!box)return;
  if(!R.loaded||!A.data){box.hidden=true;return;}
  const unidades=new Map();for(const u of uniqueUnits(matchedRows(true)))unidades.set(u.cidade,(unidades.get(u.cidade)||0)+1);
- const lista=[...A.data.cities].map(([cidade,vidas])=>({cidade,vidas,n:unidades.get(cidade)||0})).filter(c=>A.centers.has(c.cidade)).sort((a,b)=>b.vidas/(b.n+1)-a.vidas/(a.n+1)).slice(0,10);
+ const lista=[...A.data.cities].map(([cidade,vidas])=>({cidade,vidas,n:unidades.get(cidade)||0})).filter(c=>A.centers.has(c.cidade)).sort((a,b)=>b.vidas/(b.n+1)-a.vidas/(a.n+1)).slice(0,8);
  const aberto=!box.classList.contains('fechado');
- box.innerHTML=`<button type="button" class="v9-exp-titulo" aria-expanded="${aberto}">Onde expandir a rede <span>${aberto?'▾':'▸'}</span></button><div class="v9-exp-corpo"><small>Mais vidas por unidade (filtros da rede aplicados)</small><ol>${lista.map(c=>`<li><button type="button" data-cidade="${esc(c.cidade)}"><span>${esc(c.cidade)}</span><b>${fmt(c.vidas)} vidas</b><em class="${c.n?'':'sem'}">${c.n?`${fmt(c.n)} ${c.n===1?'unid.':'unids.'} · ${fmt(Math.round(c.vidas/c.n))}/unid.`:'sem rede'}</em></button></li>`).join('')}</ol></div>`;
+ box.innerHTML=`<button type="button" class="v9-exp-titulo" aria-expanded="${aberto}" title="Municípios com mais vidas por unidade da rede (filtros da rede aplicados)">Onde expandir <span>${aberto?'▾':'▸'}</span></button><div class="v9-exp-corpo"><div class="v9-exp-cab"><span>Município</span><span>Vidas</span><span>Rede</span></div>${lista.map(c=>`<button type="button" data-cidade="${esc(c.cidade)}" title="${c.n?fmt(Math.round(c.vidas/c.n))+' vidas por unidade':'Sem unidade da rede'}"><span>${esc(c.cidade)}</span><b>${fmt(c.vidas)}</b><em class="${c.n?'':'sem'}">${c.n?fmt(c.n):'0'}</em></button>`).join('')}</div>`;
  box.hidden=false;box.style.setProperty('--altura-exp',Math.round(A.maps.rede.getSize().y*.55)+'px');
  box.querySelector('.v9-exp-titulo').onclick=()=>{box.classList.toggle('fechado');atualizarExpansao();};
  box.querySelectorAll('button[data-cidade]').forEach(b=>b.onclick=()=>{const f=A.geo.features.find(x=>cityName(x)===b.dataset.cidade);if(f)A.maps.rede.fitBounds(L.geoJSON(f).getBounds(),{padding:[40,40],maxZoom:11});});
@@ -237,7 +241,7 @@ function atualizarExpansao(){
 function atualizarLegenda(verRede,verBenef){
  const box=A.controles.legenda;if(!box)return;
  if(!(verRede&&verBenef)){box.hidden=true;return;}
- box.innerHTML=`<strong>Comparação</strong><div><i style="background:linear-gradient(90deg,#ffe08a,#ffb020,#ff6a1a,#e8003d)"></i>Beneficiários (vidas)</div><div><i style="background:linear-gradient(90deg,#1238b8,#1f6bff,#00e5ff,#e6fdff)"></i>Rede credenciada</div><small>Laranja sem ciano por perto = vidas longe da rede</small>`;
+ box.innerHTML=`<div title="Laranja sem azul por perto = vidas longe da rede"><i style="background:linear-gradient(90deg,#ffe08a,#ffb020,#ff6a1a,#e8003d)"></i>Vidas</div><div><i style="background:linear-gradient(90deg,#1238b8,#1f6bff,#00e5ff,#e6fdff)"></i>Rede</div>`;
  box.hidden=false;
 }
 const CORES_REDE={'Hospitais':'#168bff','Clínicas':'#33c95a','Laboratórios':'#ad64ed','Outros':'#ffae38'};
@@ -248,7 +252,7 @@ const urgTexto=u=>[...u.urgencias].map(v=>v==='NAO'?'NÃO':v==='NAO INFORMADO'?'
 function openRedeEstado(){if(!R.loaded)return;closeModal();
  const units=[...R.filtered].sort((a,b)=>(a.cidade==='RIO DE JANEIRO'?-1:b.cidade==='RIO DE JANEIRO'?1:0)||a.cidade.localeCompare(b.cidade,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
  const cidades=new Set(units.map(u=>u.cidade)).size,element=document.createElement('div');element.className='v9-overlay';
- element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>ESTADO DO RIO DE JANEIRO — REDE CREDENCIADA</strong><small>${fmt(units.length)} ${units.length===1?'unidade':'unidades'} nos filtros do mapa 01 · ${fmt(cidades)} municípios</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Posição aproximada pelo bairro de cada prestador, utilizando referências públicas. Sem bairro informado, a unidade fica no centro do município.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>UNIDADES DA REDE</strong><div class="v9-progress">Preparando localização...</div><div class="v9-rede-lista">${units.map((u,i)=>`<button type="button" data-i="${i}"><i style="--pin:${CORES_REDE[u.categoria]}">${SIMBOLOS_REDE[u.categoria]}</i><span>${esc(u.nome)}<small>${esc([u.bairro,u.cidade].filter(Boolean).join(' — '))}${u.urgencias.has('SIM')?' · Urgência':''}</small></span></button>`).join('')}</div></aside></div></div>`;
+ element.innerHTML=`<div class="v9-dialog" role="dialog" aria-modal="true"><header><div><strong>ESTADO DO RIO DE JANEIRO — REDE CREDENCIADA</strong><small>${fmt(units.length)} ${units.length===1?'unidade':'unidades'} nos filtros do mapa 01 · ${fmt(cidades)} municípios${A.data?` · ${fmt(A.data.rj)} vidas`:''}</small></div><button class="v9-close" type="button">Fechar ×</button></header><p>Posição aproximada pelo bairro de cada prestador, utilizando referências públicas. Sem bairro informado, a unidade fica no centro do município.</p><div class="v9-grid"><div id="v9-detail-map"></div><aside><strong>UNIDADES DA REDE</strong><div class="v9-progress">Preparando localização...</div>${A.data?.bairros.size?`<div class="v9-progress v9-progress-benef">Beneficiários: aguardando a rede (${fmt(A.data.bairros.size)} bairros)</div>`:''}<div class="v9-rede-lista">${units.map((u,i)=>`<button type="button" data-i="${i}"><i style="--pin:${CORES_REDE[u.categoria]}">${SIMBOLOS_REDE[u.categoria]}</i><span>${esc(u.nome)}<small>${esc([u.bairro,u.cidade].filter(Boolean).join(' — '))}${u.urgencias.has('SIM')?' · Urgência':''}</small></span></button>`).join('')}</div></aside></div></div>`;
  document.body.appendChild(element);const modal={element,map:null,closed:false};A.modal=modal;
  element.querySelector('.v9-close').onclick=closeModal;element.onclick=e=>{if(e.target===element)closeModal();};
  const map=L.map(element.querySelector('#v9-detail-map'),{zoomControl:true}).setView([-22.45,-42.85],8);modal.map=map;
@@ -263,24 +267,56 @@ function openRedeEstado(){if(!R.loaded)return;closeModal();
  // Igual à janela de bairros do mapa 02: mapa de calor por bairro (mais unidades = mais quente) e um ponto por unidade
  const maxItens=Math.max(1,...[...lugares.values()].map(l=>l.itens.length));
  const bounds=[],heatPoints=[];let feitos=0,porBairro=0;
+ /* Comparação (pedido do autor, 19/11/2026): com beneficiários importados, a janela mostra também as vidas por bairro.
+    Beneficiários = calor quente (por baixo); rede = calor frio + pontos azuis (por cima). Botões na legenda ligam/desligam. */
+ const temBenef=!!A.data&&A.data.bairros.size>0,camadas={rede:true,benef:true},pontosRede=L.layerGroup().addTo(map),heatBenef=[];
+ let camadaRede=null,camadaBenef=null;
+ function desenhar(){
+  for(const l of [camadaBenef,camadaRede])if(l)map.removeLayer(l);camadaBenef=camadaRede=null;
+  const comparar=temBenef&&camadas.rede&&camadas.benef;
+  // a ordem importa: a última camada adicionada fica por cima
+  if(temBenef&&camadas.benef&&heatBenef.length)camadaBenef=L.heatLayer(heatBenef,comparar?{radius:46,blur:26,max:.55,minOpacity:.65,gradient:GRAD_BENEF_RUAS}:{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+  if(camadas.rede&&heatPoints.length)camadaRede=L.heatLayer(heatPoints,comparar?{radius:22,blur:12,max:.6,minOpacity:.55,gradient:GRAD_REDE}:{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+  if(camadas.rede){if(!map.hasLayer(pontosRede))pontosRede.addTo(map);}else map.removeLayer(pontosRede);
+ }
+ modal.desenhar=desenhar;
+ if(temBenef){
+  const leg=L.control({position:'bottomleft'});
+  leg.onAdd=()=>{const d=L.DomUtil.create('div','v9-comp-legenda compacta');L.DomEvent.disableClickPropagation(d);d.title='Laranja sem azul por perto = vidas longe da rede. Clique para ligar/desligar.';
+   d.innerHTML=`<button type="button" class="active" data-c="benef" aria-pressed="true"><i style="background:linear-gradient(90deg,#ff9500,#ff6a00,#ff3300,#c8002a)"></i>Vidas</button><button type="button" class="active" data-c="rede" aria-pressed="true"><i style="background:linear-gradient(90deg,#1238b8,#1f6bff,#00e5ff,#e6fdff)"></i>Rede</button>`;
+   d.querySelectorAll('button').forEach(b=>b.onclick=()=>{const c=b.dataset.c;camadas[c]=!camadas[c];b.classList.toggle('active',camadas[c]);b.setAttribute('aria-pressed',String(camadas[c]));desenhar();});
+   return d;};
+  leg.addTo(map);
+ }
+ const corPonto=temBenef?'#1f6bff':'#ff3045';
  (async()=>{for(const lugar of lugares.values()){if(modal.closed)return;
   let pos=lugar.bairro?await geocode(lugar.bairro,lugar.cidade):null;if(modal.closed)return;
   if(pos)porBairro++;else{const c=A.centers.get(lugar.cidade);pos=c?[c.lat,c.lng]:null;}
   feitos++;
   if(pos){
    heatPoints.push([pos[0],pos[1],heatIntensity(lugar.itens.length,maxItens)]);
-   if(modal.heat)map.removeLayer(modal.heat);
-   modal.heat=L.heatLayer(heatPoints,{radius:42,blur:18,max:.68,minOpacity:.40,gradient:heatGradient()}).addTo(map);
+   desenhar();
    lugar.itens.forEach((i,j)=>{const u=units[i],ang=j*2.4,raio=j?0.0012*Math.sqrt(j):0,lat=pos[0]+raio*Math.sin(ang),lng=pos[1]+raio*Math.cos(ang);bounds.push([lat,lng]);
-   markers[i]=L.circleMarker([lat,lng],{radius:4,color:'#fff',weight:1,fillColor:'#ff3045',fillOpacity:1})
+   markers[i]=L.circleMarker([lat,lng],{radius:temBenef?5:4,color:'#fff',weight:temBenef?1.5:1,fillColor:corPonto,fillOpacity:1})
     .bindTooltip(esc(u.nome),{direction:'top'})
     .bindPopup(`<div class="rede-popup"><strong>${esc(u.nome)}</strong><p>${esc([u.bairro,u.cidade].filter(Boolean).join(' — '))}${u.endereco?'<br>'+esc([u.endereco,u.numero].filter(Boolean).join(', ')):''}</p><small>${esc([...u.classes].join(' / '))} · Urgência: ${esc(urgTexto(u))}${u.esps.size?'<br>'+esc([...u.esps].join(', ')):''}</small></div>`,{maxWidth:320})
-    .addTo(map);});}
-  progress.textContent=`Localizados ${feitos} de ${lugares.size} bairros (${porBairro} pelo bairro)`;
+    .addTo(pontosRede);});}
+  progress.textContent=`Rede: localizados ${feitos} de ${lugares.size} bairros (${porBairro} pelo bairro)`;
   if(feitos===Math.min(lugares.size,10)&&bounds.length>1)map.fitBounds(bounds,{padding:[35,35],maxZoom:12});
  }
  if(bounds.length>1)map.fitBounds(bounds,{padding:[35,35],maxZoom:12});else if(bounds.length)map.setView(bounds[0],13);
- progress.textContent=`${lugares.size} locais processados: ${porBairro} pelo bairro, ${lugares.size-porBairro} pelo centro do município. Clique numa unidade para ir até ela.`;
+ progress.textContent=`Rede: ${lugares.size} locais processados (${porBairro} pelo bairro, ${lugares.size-porBairro} pelo centro do município). Clique numa unidade para ir até ela.`;
+ if(!temBenef)return;
+ // Depois da rede, os bairros dos beneficiários, do que tem mais vidas para o que tem menos (o mapa já fica útil no começo).
+ // Bairros já buscados antes (ex.: janela do mapa 02) saem do cache na hora.
+ const progB=element.querySelector('.v9-progress-benef'),lista=[...A.data.bairros].map(([key,n])=>{const [city,bairro]=key.split('|');return {city,bairro,n};}).sort((a,b)=>b.n-a.n);
+ const maxV=lista[0].n;let achados=0;
+ for(let i=0;i<lista.length;i++){if(modal.closed)return;const p=lista[i],pos=await geocode(p.bairro,p.city);if(modal.closed)return;
+  if(pos){achados++;heatBenef.push([pos[0],pos[1],heatIntensity(p.n,maxV)]);if(achados<=20||achados%5===0)desenhar();}
+  progB.textContent=`Beneficiários: ${fmt(i+1)} de ${fmt(lista.length)} bairros consultados (${fmt(achados)} localizados) · ~1 s por bairro`;
+ }
+ desenhar();
+ progB.textContent=`Beneficiários: ${fmt(achados)} de ${fmt(lista.length)} bairros localizados.`;
  })();
 }
 /* Mapa 01: rede (calor frio + marcadores) e, se importados, beneficiários (calor quente) por baixo.
@@ -388,15 +424,20 @@ function styles(){if($('v9-styles'))return;const s=document.createElement('style
 .map-camada.active{opacity:1;color:#fff;background:#1b3050}.map-camada:hover{background:#1b3050}
 .v9-comp-legenda,.v9-expandir{background:#101c34ee;border:1px solid #345170;border-radius:8px;color:#fff;font:11px Arial,sans-serif;box-shadow:0 5px 15px #0008}
 .v9-comp-legenda{padding:9px 11px;display:flex;flex-direction:column;gap:6px;max-width:220px}
-.v9-comp-legenda div{display:flex;align-items:center;gap:8px}.v9-comp-legenda i{flex:0 0 46px;height:9px;border-radius:5px}.v9-comp-legenda small{color:#a9c2dc}
-.v9-expandir{width:215px;max-height:var(--altura-exp,300px);overflow:auto}
-.v9-exp-titulo{display:flex;justify-content:space-between;width:100%;background:none;border:0;color:#fff;font:700 12px Arial,sans-serif;padding:9px 11px;cursor:pointer}
+.v9-comp-legenda div,.v9-comp-legenda button{display:flex;align-items:center;gap:8px}
+.v9-comp-legenda button{background:none;border:0;color:#fff;font:11px Arial,sans-serif;padding:2px 0;cursor:pointer;opacity:.45;text-align:left}.v9-comp-legenda button.active{opacity:1}
+.v9-progress-benef{color:#ffb36b}.v9-comp-legenda i{flex:0 0 46px;height:9px;border-radius:5px}.v9-comp-legenda small{color:#a9c2dc}
+.v9-comp-legenda.compacta{flex-direction:row;gap:10px;padding:4px 8px;font-size:10px}.v9-comp-legenda.compacta i{flex:0 0 22px;height:7px}
+.v9-expandir{width:190px;max-height:var(--altura-exp,300px);overflow:auto;font-size:10px}
+.v9-exp-titulo{display:flex;justify-content:space-between;width:100%;background:none;border:0;color:#fff;font:700 11px Arial,sans-serif;padding:5px 8px;cursor:pointer}
 .v9-expandir.fechado .v9-exp-corpo{display:none}
-.v9-exp-corpo{padding:0 11px 9px}.v9-exp-corpo>small{color:#a9c2dc}
-.v9-exp-corpo ol{margin:6px 0 0;padding:0 0 0 18px}.v9-exp-corpo li{border-bottom:1px solid #30405b}
-.v9-exp-corpo li button{display:grid;grid-template-columns:1fr auto;gap:2px 8px;width:100%;background:none;border:0;color:#fff;text-align:left;padding:6px 0;cursor:pointer;font:11px Arial,sans-serif}
-.v9-exp-corpo li button:hover span{color:#33e2fa}.v9-exp-corpo b{color:#ff9a3c}.v9-exp-corpo em{grid-column:1/-1;font-style:normal;color:#8fd8ea}.v9-exp-corpo em.sem{color:#ff5c7a;font-weight:700}
-@media(max-width:700px){.v9-expandir{width:200px}.v9-comp-legenda{max-width:180px}}
+.v9-exp-corpo{padding:0 8px 5px}
+.v9-exp-cab,.v9-exp-corpo>button{display:grid;grid-template-columns:1fr 42px 26px;gap:6px;align-items:center}
+.v9-exp-cab{color:#7f93ad;font-size:9px;padding:2px 0;border-bottom:1px solid #30405b}.v9-exp-cab span+span,.v9-exp-corpo>button b,.v9-exp-corpo>button em{text-align:right}
+.v9-exp-corpo>button{width:100%;background:none;border:0;border-bottom:1px solid #22324b;color:#fff;text-align:left;padding:3px 0;cursor:pointer;font:10px Arial,sans-serif}
+.v9-exp-corpo>button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v9-exp-corpo>button:hover span{color:#33e2fa}.v9-exp-corpo b{color:#ff9a3c}.v9-exp-corpo em{font-style:normal;color:#8fd8ea}.v9-exp-corpo em.sem{color:#ff5c7a;font-weight:700}
+@media(max-width:700px){.v9-expandir{width:170px}}
 @media(max-width:700px){.v9-grid{grid-template-columns:1fr;grid-template-rows:minmax(250px,1fr) 180px}}
 `;document.head.appendChild(s);}
 function init(){styles();document.querySelectorAll('.map-panel-footer').forEach(e=>e.remove());
@@ -406,6 +447,12 @@ function init(){styles();document.querySelectorAll('.map-panel-footer').forEach(
  for(const id of ['filtroUrgencia','filtroClasse','filtroEspecialidade'])$(id)?.addEventListener('change',()=>renderRede());
  $('filtroMunicipio')?.addEventListener('change',()=>renderRede(true));
  for(const [id,camada] of [['camadaRede','rede'],['camadaBenef','benef']])$(id)?.addEventListener('click',e=>{A.camadas[camada]=!A.camadas[camada];e.currentTarget.classList.toggle('active',A.camadas[camada]);e.currentTarget.setAttribute('aria-pressed',String(A.camadas[camada]));drawRede();});
+ // Botão único "Filtros": abre/fecha o painel; fecha ao clicar fora ou com Esc
+ const btnF=$('btnFiltros'),painelF=$('painelFiltros');
+ const abrirFiltros=v=>{if(!btnF||!painelF)return;painelF.hidden=!v;btnF.setAttribute('aria-expanded',String(v));};
+ btnF?.addEventListener('click',e=>{e.stopPropagation();abrirFiltros(painelF.hidden);});
+ document.addEventListener('click',e=>{if(painelF&&!painelF.hidden&&!e.target.closest('.rede-filtro-wrap'))abrirFiltros(false);});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&painelF&&!painelF.hidden){abrirFiltros(false);btnF.focus();}});
  $('limparFiltros')?.addEventListener('click',()=>{for(const id of ['filtroUrgencia','filtroClasse','filtroEspecialidade','filtroMunicipio'])$(id).value='';renderRede(true);});
  window.addEventListener('resize',()=>{for(const m of Object.values(A.maps))m?.invalidateSize({pan:false});});
  status('Aguardando importação');}
